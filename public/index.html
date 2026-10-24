@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Daily quantitative crypto portfolio intelligence dashboard">
+  <title>Crypto Intelligence // Quant Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.7/dist/purify.min.js"></script>
+  <style>
+    :root { color-scheme: dark; --cyan: #5ee7ff; --violet: #a78bfa; --panel: rgba(8, 18, 35, .66); }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 20% 0%, #102b4d 0, #050914 40%, #02040a 100%); color: #d9f7ff; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    #scene { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: .72; }
+    .shell { position: relative; z-index: 1; }
+    .glass { background: var(--panel); border: 1px solid rgba(94, 231, 255, .18); box-shadow: inset 0 1px rgba(255,255,255,.05), 0 22px 60px rgba(0,0,0,.3); backdrop-filter: blur(18px); }
+    .metric { position: relative; overflow: hidden; }
+    .metric::after { content: ""; position: absolute; inset: auto 0 0; height: 1px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
+    .eyebrow { letter-spacing: .22em; text-transform: uppercase; color: #7dd3fc; font-size: .7rem; }
+    .value { font-variant-numeric: tabular-nums; text-shadow: 0 0 24px rgba(94,231,255,.22); }
+    .report h2 { margin: 1.65rem 0 .65rem; color: #a5f3fc; font-size: 1.1rem; letter-spacing: .04em; }
+    .report p, .report li { color: #c5d5e5; line-height: 1.75; }
+    .report ul, .report ol { padding-left: 1.4rem; }
+    .archive-button[aria-current="true"] { border-color: rgba(94,231,255,.75); background: rgba(34,211,238,.12); color: white; }
+    .allocation-track { background: rgba(148,163,184,.09); }
+    .allocation-fill { background: linear-gradient(90deg, #22d3ee, #8b5cf6); box-shadow: 0 0 16px rgba(34,211,238,.35); }
+    @media (prefers-reduced-motion: reduce) { #scene { display: none; } * { scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <canvas id="scene" aria-hidden="true"></canvas>
+  <main class="shell max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-8">
+      <div>
+        <p class="eyebrow">Autonomous market intelligence</p>
+        <h1 class="mt-2 text-3xl sm:text-5xl font-black tracking-tight">QUANT<span class="text-cyan-300">//</span>ORBIT</h1>
+        <p class="mt-3 text-slate-400 max-w-2xl">Daily public-market telemetry, portfolio accounting, and Gemini-generated risk analysis.</p>
+      </div>
+      <div class="glass rounded-2xl px-5 py-3 flex items-center gap-3" role="status" aria-live="polite">
+        <span id="status-dot" class="w-2 h-2 rounded-full bg-amber-300 animate-pulse"></span>
+        <div><p class="eyebrow">Data link</p><p id="data-status" class="text-sm">Synchronizing…</p></div>
+      </div>
+    </header>
+
+    <section aria-label="Portfolio metrics" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <article class="glass metric rounded-2xl p-4 sm:p-5 col-span-2"><p class="eyebrow">Portfolio value</p><p id="metric-portfolio-val" class="value text-3xl sm:text-5xl font-bold mt-2">—</p><p id="report-date" class="text-xs text-slate-500 mt-2">Awaiting data</p></article>
+      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">PnL</p><p id="metric-pnl-val" class="value text-2xl font-bold mt-2">—</p><p id="pnl-percent" class="text-sm mt-1">—</p></article>
+      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">Liquid cash</p><p id="metric-cash-val" class="value text-2xl font-bold mt-2">—</p><p class="text-sm text-slate-400 mt-1"><span id="cash-ratio">—</span> of NAV</p></article>
+      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">Fear & Greed</p><p id="metric-fng-val" class="value text-2xl font-bold mt-2">—</p><p class="text-xs text-slate-500 mt-1">0 fear · 100 greed</p></article>
+      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">BTC dominance</p><p id="btc-dominance" class="value text-2xl font-bold mt-2">—</p><p class="text-xs text-slate-500 mt-1">Market share</p></article>
+      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">Reserved limits</p><p id="reserved-for-limits-usd" class="value text-2xl font-bold mt-2">—</p><p class="text-xs text-slate-500 mt-1">Excluded from liquid ratio</p></article>
+      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">Analysis cycle</p><p id="current-day" class="value text-2xl font-bold mt-2">—</p><p class="text-xs text-slate-500 mt-1">Latest archived brief</p></article>
+    </section>
+
+    <section class="grid lg:grid-cols-[1fr_2fr] gap-4 mt-4">
+      <aside class="space-y-4">
+        <div class="glass rounded-2xl p-5">
+          <div class="flex justify-between items-center"><h2 class="font-semibold">Allocation field</h2><span class="eyebrow">Live value</span></div>
+          <div id="allocations" class="mt-5 space-y-4"><p class="text-sm text-slate-500">No allocation data.</p></div>
+        </div>
+        <div class="glass rounded-2xl p-5">
+          <h2 class="font-semibold">Report archive</h2>
+          <div id="archive" class="mt-4 grid gap-2"><p class="text-sm text-slate-500">No archived reports.</p></div>
+        </div>
+      </aside>
+      <article class="glass rounded-2xl p-5 sm:p-8 min-h-[32rem]">
+        <div class="border-b border-cyan-100/10 pb-5">
+          <p id="report-kicker" class="eyebrow">Analysis stream</p>
+          <h2 id="report-title" class="text-2xl sm:text-3xl font-bold mt-2">Loading quantitative brief…</h2>
+        </div>
+        <div id="report-content" class="report mt-6"><p class="text-slate-400">Establishing secure data link.</p></div>
+      </article>
+    </section>
+    <footer class="text-center text-xs text-slate-600 mt-8">Research interface only · not financial advice · orders shown in data are not executed by this dashboard</footer>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+    let reports = [];
+
+    function setStatus(message, ok = false) {
+      $('data-status').textContent = message;
+      $('status-dot').className = `w-2 h-2 rounded-full ${ok ? 'bg-cyan-300' : 'bg-rose-400'}`;
+    }
+
+    function renderAllocations(metrics) {
+      const host = $('allocations');
+      host.replaceChildren();
+      const allocations = Array.isArray(metrics.allocations) ? metrics.allocations : [];
+      if (!allocations.length) { host.textContent = 'No allocation data.'; return; }
+      const max = Math.max(...allocations.map((item) => Number(item.value_usd) || 0), 1);
+      allocations.forEach((item) => {
+        const row = document.createElement('div');
+        const top = document.createElement('div');
+        top.className = 'flex justify-between text-sm mb-1.5';
+        const label = document.createElement('span');
+        label.className = 'font-medium text-slate-200';
+        label.textContent = item.label || item.symbol || 'Asset';
+        const value = document.createElement('span');
+        value.className = 'text-slate-400 tabular-nums';
+        value.textContent = money.format(Number(item.value_usd) || 0);
+        top.append(label, value);
+        const track = document.createElement('div');
+        track.className = 'allocation-track h-1.5 rounded-full overflow-hidden';
+        const fill = document.createElement('div');
+        fill.className = 'allocation-fill h-full rounded-full';
+        fill.style.width = `${Math.max(2, ((Number(item.value_usd) || 0) / max) * 100)}%`;
+        track.append(fill); row.append(top, track); host.append(row);
+      });
+    }
+
+    function renderReport(report) {
+      if (!report || typeof report !== 'object') return;
+      const metrics = report.metrics || {};
+      $('metric-portfolio-val').textContent = money.format(Number(metrics.portfolio_value) || 0);
+      const pnl = Number(metrics.pnl_usd) || 0;
+      $('metric-pnl-val').textContent = `${pnl >= 0 ? '+' : ''}${money.format(pnl)}`;
+      $('metric-pnl-val').classList.toggle('text-rose-300', pnl < 0);
+      $('metric-pnl-val').classList.toggle('text-emerald-300', pnl >= 0);
+      $('pnl-percent').textContent = `${Number(metrics.pnl_percent) >= 0 ? '+' : ''}${number.format(Number(metrics.pnl_percent) || 0)}%`;
+      $('metric-cash-val').textContent = money.format(Number(metrics.cash_reserve_usd) || 0);
+      $('cash-ratio').textContent = `${number.format(Number(metrics.cash_ratio) || 0)}%`;
+      $('metric-fng-val').textContent = number.format(Number(metrics.fear_greed) || 0);
+      $('btc-dominance').textContent = metrics.btc_dominance == null ? 'N/A' : `${number.format(Number(metrics.btc_dominance))}%`;
+      $('reserved-for-limits-usd').textContent = money.format(Number(metrics.reserved_for_limits_usd) || 0);
+      $('current-day').textContent = `DAY ${report.day ?? '—'}`;
+      $('report-date').textContent = report.date ? `Snapshot ${report.date}` : 'Date unavailable';
+      $('report-kicker').textContent = `Archive // Day ${report.day ?? '—'}`;
+      $('report-title').textContent = report.title || 'Untitled report';
+      try {
+        if (!report.content || typeof report.content !== 'string') throw new Error('Report content is empty');
+        $('report-content').innerHTML = DOMPurify.sanitize(marked.parse(report.content));
+      } catch (error) {
+        $('report-content').replaceChildren();
+        const message = document.createElement('p');
+        message.className = 'text-rose-300';
+        message.textContent = `Report could not be rendered: ${error.message}`;
+        $('report-content').append(message);
+      }
+      renderAllocations(metrics);
+      document.querySelectorAll('.archive-button').forEach((button) => button.setAttribute('aria-current', String(Number(button.dataset.day) === Number(report.day))));
+    }
+
+    function renderArchive() {
+      const host = $('archive'); host.replaceChildren();
+      reports.forEach((report) => {
+        const button = document.createElement('button');
+        button.type = 'button'; button.dataset.day = report.day;
+        button.className = 'archive-button text-left rounded-xl border border-white/10 px-4 py-3 transition hover:bg-white/5';
+        const title = document.createElement('span'); title.className = 'block text-sm font-medium'; title.textContent = report.title || `Day ${report.day}`;
+        const date = document.createElement('span'); date.className = 'block text-xs text-slate-500 mt-1'; date.textContent = report.date || 'Unknown date';
+        button.append(title, date); button.addEventListener('click', () => renderReport(report)); host.append(button);
+      });
+    }
+
+    async function loadReports() {
+      try {
+        const response = await fetch('./data/reports.json?v=' + Date.now());
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const documentData = await response.json();
+        if (!Array.isArray(documentData.reports) || !documentData.reports.length) throw new Error('No reports are available');
+        reports = [...documentData.reports].sort((a, b) => Number(b.day) - Number(a.day));
+        renderArchive(); renderReport(reports[0]); setStatus(`Online · ${reports.length} report${reports.length === 1 ? '' : 's'}`, true);
+      } catch (error) {
+        setStatus(`Data unavailable · ${error.message}`);
+        $('report-title').textContent = 'Analysis stream unavailable';
+        $('report-content').textContent = 'Copy data into public/data and serve the public directory over HTTP. See README.md for the local workflow.';
+      }
+    }
+
+    function startScene() {
+      if (!window.THREE || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const canvas = $('scene'); const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 1.8));
+      const scene = new THREE.Scene(); const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, .1, 100); camera.position.z = 8;
+      const geometry = new THREE.BufferGeometry(); const count = 900; const points = new Float32Array(count * 3);
+      for (let i = 0; i < points.length; i += 3) { points[i] = (Math.random() - .5) * 18; points[i + 1] = (Math.random() - .5) * 12; points[i + 2] = (Math.random() - .5) * 12; }
+      geometry.setAttribute('position', new THREE.BufferAttribute(points, 3));
+      const particles = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0x5ee7ff, size: .025, transparent: true, opacity: .72 })); scene.add(particles);
+      const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(2.25, 2), new THREE.MeshBasicMaterial({ color: 0x8b5cf6, wireframe: true, transparent: true, opacity: .1 })); orb.position.set(3.4, .5, -1.5); scene.add(orb);
+      function resize() { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight, false); }
+      addEventListener('resize', resize, { passive: true }); resize();
+      function animate(time) { particles.rotation.y = time * .000025; particles.rotation.x = Math.sin(time * .0001) * .05; orb.rotation.x = time * .00008; orb.rotation.y = time * .00012; renderer.render(scene, camera); requestAnimationFrame(animate); }
+      requestAnimationFrame(animate);
+    }
+
+    startScene(); loadReports();
+  </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "initial_capital_usd": 99960.0,
+  "reports": [
+    {
+      "day": 35,
+      "date": "2026-10-23",
+      "title": "Day 35 Quantitative Crypto Brief",
+      "content": "## 1. Executive Summary\n\nDay 35 closes with the supplied portfolio baseline preserved for future daily comparisons.\n\n## 2. Market Snapshot\n\nFear & Greed is 62 and BTC dominance is 58.8%.\n\n## 3. Portfolio Performance\n\nPortfolio value is $104,783.29, a gain of $4,823.29 (4.83%) against initial capital.\n\n## 4. Risk & Active Orders\n\nThe $10,000 pending BTC limit allocation is reserved separately from the $28,043.29 liquid cash reserve. Pending protective orders are recorded in state.json and are not represented as executed.\n\n## 5. Quantitative Outlook\n\nThis seeded historical report establishes the owner-supplied Day 35 values; future reports revalue holdings using fresh public prices.",
+      "metrics": {
+        "portfolio_value": 104783.29,
+        "pnl_usd": 4823.29,
+        "pnl_percent": 4.83,
+        "cash_reserve_usd": 28043.29,
+        "reserved_for_limits_usd": 10000.0,
+        "cash_ratio": 26.8,
+        "fear_greed": 62,
+        "btc_dominance": 58.8,
+        "allocations": [
+          {
+            "symbol": "BTC",
+            "label": "Bitcoin",
+            "quantity": 0.5,
+            "value_usd": 42325.0
+          },
+          {
+            "symbol": "USDT",
+            "label": "Cash + Limits",
+            "quantity": 28043.29,
+            "value_usd": 28043.0
+          },
+          {
+            "symbol": "ETH",
+            "label": "Ethereum",
+            "quantity": 5.5866,
+            "value_usd": 14190.0
+          },
+          {
+            "symbol": "LINK",
+            "label": "Chainlink",
+            "quantity": 333.33,
+            "value_usd": 5150.0
+          },
+          {
+            "symbol": "SOL",
+            "label": "Solana",
+            "quantity": 44.56,
+            "value_usd": 5075.0
+          }
+        ]
+      }
+    }
+  ]
+}

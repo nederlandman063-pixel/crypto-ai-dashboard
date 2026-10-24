@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-23T00:00:00+00:00",
+  "orders": [
+    {
+      "id": "btc-limit-buy-84280",
+      "symbol": "BTCUSDT",
+      "side": "buy",
+      "type": "limit",
+      "limit_price_usd": 84280.0,
+      "quote_amount_usdt": 10000.0,
+      "status": "pending",
+      "created_at": "2026-10-23T00:00:00+00:00",
+      "submitted_at": null,
+      "executed_at": null,
+      "cancelled_at": null,
+      "execution_source": null
+    },
+    {
+      "id": "sol-tp-11740",
+      "symbol": "SOLUSDT",
+      "side": "sell",
+      "type": "take_profit",
+      "trigger_price_usd": 117.4,
+      "position_fraction": 0.5,
+      "status": "pending",
+      "created_at": "2026-10-23T00:00:00+00:00",
+      "submitted_at": null,
+      "executed_at": null,
+      "cancelled_at": null,
+      "execution_source": null
+    },
+    {
+      "id": "sol-stop-11220",
+      "symbol": "SOLUSDT",
+      "side": "sell",
+      "type": "breakeven_stop",
+      "stop_price_usd": 112.2,
+      "position_fraction": 0.5,
+      "status": "pending",
+      "created_at": "2026-10-23T00:00:00+00:00",
+      "submitted_at": null,
+      "executed_at": null,
+      "cancelled_at": null,
+      "execution_source": null
+    },
+    {
+      "id": "link-tp-1590",
+      "symbol": "LINKUSDT",
+      "side": "sell",
+      "type": "take_profit",
+      "trigger_price_usd": 15.9,
+      "position_fraction": 0.5,
+      "status": "pending",
+      "created_at": "2026-10-23T00:00:00+00:00",
+      "submitted_at": null,
+      "executed_at": null,
+      "cancelled_at": null,
+      "execution_source": null
+    },
+    {
+      "id": "link-stop-1520",
+      "symbol": "LINKUSDT",
+      "side": "sell",
+      "type": "guaranteed_stop",
+      "stop_price_usd": 15.2,
+      "position_fraction": 0.5,
+      "status": "pending",
+      "created_at": "2026-10-23T00:00:00+00:00",
+      "submitted_at": null,
+      "executed_at": null,
+      "cancelled_at": null,
+      "execution_source": null
+    }
+  ],
+  "execution": {
+    "last_success_at": null,
+    "last_report_day": 35,
+    "last_snapshot_at": null,
+    "model": null,
+    "orders_executed_by_pipeline": false
+  }
+}

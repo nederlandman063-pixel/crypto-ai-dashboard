@@ -1,6 +1,6 @@
 # Crypto AI Dashboard
 
-A cron-driven quantitative crypto analysis pipeline and a static, responsive Three.js dashboard for GitHub Pages. The pipeline reads public Binance spot/futures data and Alternative.me's Fear & Greed index, asks Gemini for a constrained five-section Markdown analysis, revalues holdings, and atomically updates local JSON state.
+A cron-driven quantitative crypto analysis pipeline and a static, responsive Three.js dashboard for GitHub Pages. The pipeline reads public Binance spot/futures data and Alternative.me's Fear & Greed index, asks Gemini for a strictly validated five-section Markdown analysis, revalues holdings, and atomically updates local JSON state.
 
 The software does not place, submit, cancel, or simulate exchange orders.
 
@@ -67,7 +67,7 @@ python -m json.tool data/reports.json >/dev/null
 python -m json.tool data/state.json >/dev/null
 ```
 
-The test suite uses deterministic HTTP/Gemini doubles and runs an end-to-end Day 36 pipeline in a temporary directory. It never calls Gemini and never modifies canonical Day 35 data.
+The test suite uses deterministic HTTP/Gemini doubles and runs the next-day pipeline in a temporary directory. It covers exact headings, snapshot-backed table/funding values, bounded repair, rejection of the legacy Day 36 shape, and failure before persistence. It never calls Gemini or modifies canonical report data.
 
 ## GitHub Actions and Pages
 

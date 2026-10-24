@@ -5,10 +5,12 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import tempfile
 from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
@@ -18,20 +20,39 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORTS_PATH = REPO_ROOT / "data" / "reports.json"
 DEFAULT_STATE_PATH = REPO_ROOT / "data" / "state.json"
 MODEL = "gemini-2.5-flash"
+MAX_REPORT_ATTEMPTS = 3
+ASSET_SYMBOLS = ("BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "LINK")
 SECTION_HEADINGS = (
-    "## 1. Executive Summary",
-    "## 2. Market Snapshot",
-    "## 3. Portfolio Performance",
-    "## 4. Risk & Active Orders",
-    "## 5. Quantitative Outlook",
+    "## 1. Retrospective check against Day N-1 triggers",
+    "## 2. Derivatives / Funding / Liquidations",
+    "## 3. Macro / Onchain sentiment",
+    "## 4. 8-asset comparative summary table",
+    "## 5. Practical trading triggers for 1 BTC + $20k USDT model balance",
 )
-SYSTEM_INSTRUCTION = """You are a quantitative crypto portfolio analyst. Use only the supplied market snapshot, prior metrics, and state. Never claim an order filled or executed unless the state explicitly says so. Return concise Markdown with exactly these five section headings, in this order:
-## 1. Executive Summary
-## 2. Market Snapshot
-## 3. Portfolio Performance
-## 4. Risk & Active Orders
-## 5. Quantitative Outlook
-Discuss uncertainty and risk. Do not invent prices, metrics, events, or news. Do not add any other H1 or H2 headings."""
+TABLE_COLUMNS = ("Symbol", "High 24h", "Low 24h", "Last", "24h Change %", "Volume 24h")
+MODEL_BALANCE_LINE = (
+    "Model balance (separate from tracked portfolio): 1 BTC + $20,000 USDT."
+)
+SYSTEM_INSTRUCTION = """You are a quantitative crypto portfolio analyst. Use only the supplied JSON. Never invent prices, funding, liquidations, macro/onchain metrics, news, executions, or fills.
+
+Return concise Markdown with exactly these five H2 headings, verbatim and in order, and no other H1 or H2 headings:
+## 1. Retrospective check against Day N-1 triggers
+## 2. Derivatives / Funding / Liquidations
+## 3. Macro / Onchain sentiment
+## 4. 8-asset comparative summary table
+## 5. Practical trading triggers for 1 BTC + $20k USDT model balance
+
+Section 1: begin with this exact legend line: `Touched means the trigger lies inside the supplied 24h high/low range; not touched means it lies outside; indeterminate means the current high, low, or last is insufficient. A touch does not prove execution.` Then compare every prior state order/trigger with each symbol's current high_24h, low_24h, and last. Label each item touched, not touched, or indeterminate, mention every supplied order id, and discuss explicit triggers in the previous report when present. A range crossing is not proof of execution.
+
+Section 2: give one bullet for every available funding value in exactly this form: `- BTCUSDT lastFundingRate: 0.00001` (substitute the exact supplied raw symbol/value). If liquidation data is absent, include `Liquidation data: unavailable (not provided in supplied data).`
+
+Section 3: cite only supplied sentiment fields. Use lines `Fear & Greed: <exact value>` and `BTC dominance: <exact value>%` when available. Because this input currently supplies no other macro or onchain series, include `Additional macro data: unavailable (not provided in supplied data).` and `Onchain data: unavailable (not provided in supplied data).`
+
+Section 4: include one Markdown table and no asset bullets. Use exactly this header: `| Symbol | High 24h | Low 24h | Last | 24h Change % | Volume 24h |`. Copy raw snapshot values exactly. Include exactly these rows in this order: BTC, ETH, SOL, BNB, XRP, ADA, DOGE, LINK.
+
+Section 5: begin with `Model balance (separate from tracked portfolio): 1 BTC + $20,000 USDT.` Give at least two practical conditional price triggers beginning with `- If`, with explicit sizing for this separate model balance. Do not confuse it with current_revalued_metrics, portfolio_and_order_state, or execute/simulate trades. End with `No trades are executed by this report.`
+
+Discuss uncertainty and risk without introducing unsupplied facts."""
 
 
 class PipelineError(RuntimeError):
@@ -152,20 +173,21 @@ def build_metrics(
 def build_prompt(
     day: int,
     snapshot: dict[str, Any],
-    previous_metrics: dict[str, Any],
+    previous_report: dict[str, Any],
     state: dict[str, Any],
     current_metrics: dict[str, Any],
 ) -> str:
     payload = {
         "day": day,
         "market_snapshot": snapshot,
-        "previous_metrics": previous_metrics,
+        "previous_report": previous_report,
         "current_revalued_metrics": current_metrics,
         "portfolio_and_order_state": state,
     }
     return (
-        "Produce today's report from this JSON input. Preserve the exact five required "
-        "headings and distinguish pending orders from executions.\n\n"
+        "Produce today's complete report from this JSON input. Follow every formatting "
+        "and factual constraint in the system instruction. Copy numeric snapshot values "
+        "without rounding, and distinguish a trigger range touch from an execution.\n\n"
         + json.dumps(payload, indent=2, sort_keys=True)
     )
 
@@ -194,10 +216,225 @@ def generate_with_gemini(prompt: str, api_key: str) -> str:
     return text.strip()
 
 
-def validate_report_markdown(content: str) -> None:
-    positions = [content.find(heading) for heading in SECTION_HEADINGS]
-    if any(position < 0 for position in positions) or positions != sorted(positions):
-        raise PipelineError("AI report must contain the five required section headings in order")
+def _split_markdown_row(line: str) -> list[str]:
+    value = line.strip()
+    if value.startswith("|"):
+        value = value[1:]
+    if value.endswith("|"):
+        value = value[:-1]
+    return [cell.strip() for cell in value.split("|")]
+
+
+def _decimal(value: Any, label: str) -> Decimal:
+    cleaned = str(value).strip()
+    for token in ("`", "**", "$", ",", "%"):
+        cleaned = cleaned.replace(token, "")
+    try:
+        result = Decimal(cleaned)
+    except InvalidOperation as exc:
+        raise PipelineError(f"{label} must be an unrounded numeric value, got {value!r}") from exc
+    if not result.is_finite():
+        raise PipelineError(f"{label} must be finite")
+    return result
+
+
+def _require_matching_number(actual: Any, expected: Any, label: str) -> None:
+    if _decimal(actual, label) != _decimal(expected, label):
+        raise PipelineError(f"{label} does not match the supplied snapshot value")
+
+
+def _extract_sections(content: str) -> dict[str, str]:
+    if re.search(r"(?m)^```", content):
+        raise PipelineError("AI report must be renderable Markdown, not a fenced code block")
+    matches = list(re.finditer(r"(?m)^#{1,2}\s+.+?\s*$", content))
+    headings = [match.group(0).strip() for match in matches]
+    if headings != list(SECTION_HEADINGS):
+        raise PipelineError(
+            "AI report must contain exactly the five required H2 section headings in order"
+        )
+    return {
+        heading: content[match.end() : matches[index + 1].start() if index + 1 < len(matches) else len(content)].strip()
+        for index, (heading, match) in enumerate(zip(SECTION_HEADINGS, matches, strict=True))
+    }
+
+
+def _validate_comparative_table(section: str, snapshot: dict[str, Any]) -> None:
+    lines = section.splitlines()
+    table_start: int | None = None
+    for index in range(len(lines) - 1):
+        header = _split_markdown_row(lines[index])
+        separator = _split_markdown_row(lines[index + 1])
+        if (
+            len(header) == len(TABLE_COLUMNS)
+            and tuple(header) == TABLE_COLUMNS
+            and len(separator) == len(header)
+            and all(re.fullmatch(r":?-{3,}:?", cell) for cell in separator)
+        ):
+            if table_start is not None:
+                raise PipelineError("Section 4 must contain exactly one comparative table")
+            table_start = index
+    if table_start is None:
+        raise PipelineError("Section 4 must contain the required valid Markdown table")
+
+    rows: list[list[str]] = []
+    for line in lines[table_start + 2 :]:
+        if not line.strip() or "|" not in line:
+            break
+        row = _split_markdown_row(line)
+        if len(row) != len(TABLE_COLUMNS):
+            raise PipelineError("Every comparative table row must have exactly six cells")
+        rows.append(row)
+
+    symbols = [row[0].replace("`", "").replace("**", "").strip() for row in rows]
+    if symbols != list(ASSET_SYMBOLS):
+        raise PipelineError(
+            "Comparative table must have exactly BTC, ETH, SOL, BNB, XRP, ADA, DOGE, LINK rows in order"
+        )
+
+    markets = snapshot.get("markets")
+    if not isinstance(markets, dict):
+        raise PipelineError("Cannot validate report table without snapshot markets")
+    fields = ("high_24h", "low_24h", "last", "percent_change_24h", "volume_24h")
+    for row, symbol in zip(rows, ASSET_SYMBOLS, strict=True):
+        market = markets.get(f"{symbol}USDT")
+        if not isinstance(market, dict):
+            raise PipelineError(f"Snapshot is missing {symbol}USDT for table validation")
+        for cell, field in zip(row[1:], fields, strict=True):
+            if field not in market:
+                raise PipelineError(f"Snapshot is missing {symbol}USDT {field}")
+            _require_matching_number(cell, market[field], f"{symbol} table {field}")
+
+
+def _validate_funding(section: str, snapshot: dict[str, Any]) -> None:
+    markets = snapshot.get("markets")
+    if not isinstance(markets, dict):
+        raise PipelineError("Cannot validate funding references without snapshot markets")
+    pattern = re.compile(
+        r"(?im)^\s*[-*]\s*([A-Z]+USDT)\s+lastFundingRate:\s*`?([-+0-9.eE]+)`?\s*$"
+    )
+    references = pattern.findall(section)
+    actual = {symbol: value for symbol, value in references}
+    expected = {
+        f"{symbol}USDT": markets[f"{symbol}USDT"]["last_funding_rate"]
+        for symbol in ASSET_SYMBOLS
+        if isinstance(markets.get(f"{symbol}USDT"), dict)
+        and markets[f"{symbol}USDT"].get("last_funding_rate") is not None
+    }
+    if len(references) != len(actual) or set(actual) != set(expected):
+        raise PipelineError("Section 2 must cite every available lastFundingRate exactly once")
+    for symbol, expected_value in expected.items():
+        _require_matching_number(actual[symbol], expected_value, f"{symbol} lastFundingRate")
+    if not re.search(r"(?i)Liquidation data:\s*(?:unavailable|not provided)", section):
+        raise PipelineError("Section 2 must explicitly state that liquidation data is unavailable")
+
+
+def _validate_sentiment(section: str, current_metrics: dict[str, Any]) -> None:
+    fear_greed = current_metrics.get("fear_greed")
+    fear_match = re.search(r"(?im)^Fear\s*&\s*Greed:\s*([-+0-9.eE]+)\s*$", section)
+    if fear_match is None:
+        raise PipelineError("Section 3 must cite the supplied Fear & Greed value")
+    _require_matching_number(fear_match.group(1), fear_greed, "Fear & Greed")
+
+    dominance = current_metrics.get("btc_dominance")
+    dominance_match = re.search(
+        r"(?im)^BTC dominance:\s*([-+0-9.eE]+)%?\s*$", section
+    )
+    if dominance is None:
+        if not re.search(r"(?i)BTC dominance:\s*(?:unavailable|not provided)", section):
+            raise PipelineError("Section 3 must identify unavailable BTC dominance")
+    elif dominance_match is None:
+        raise PipelineError("Section 3 must cite the supplied BTC dominance value")
+    else:
+        _require_matching_number(dominance_match.group(1), dominance, "BTC dominance")
+
+    if not re.search(r"(?i)Additional macro data:\s*(?:unavailable|not provided)", section):
+        raise PipelineError("Section 3 must identify unavailable additional macro data")
+    if not re.search(r"(?i)Onchain data:\s*(?:unavailable|not provided)", section):
+        raise PipelineError("Section 3 must identify unavailable onchain data")
+
+
+def validate_report_markdown(
+    content: str,
+    *,
+    snapshot: dict[str, Any],
+    current_metrics: dict[str, Any],
+    state: dict[str, Any],
+) -> None:
+    sections = _extract_sections(content)
+    retrospective = sections[SECTION_HEADINGS[0]]
+    for definition in (r"Touched means\b", r"Not touched means\b", r"Indeterminate means\b"):
+        if not re.search(definition, retrospective, re.IGNORECASE):
+            raise PipelineError("Section 1 must define touched, not touched, and indeterminate")
+    for field in ("high", "low", "last"):
+        if not re.search(rf"\b{field}\b", retrospective, re.IGNORECASE):
+            raise PipelineError(f"Section 1 must compare current {field} data")
+    if not re.search(r"(?i)(?:not|does not) (?:prove|mean|claim).{0,20}execution", retrospective):
+        raise PipelineError("Section 1 must not represent a range touch as execution")
+    orders = state.get("orders")
+    if isinstance(orders, list):
+        for order in orders:
+            if isinstance(order, dict) and isinstance(order.get("id"), str):
+                if order["id"] not in retrospective:
+                    raise PipelineError(f"Section 1 must assess prior trigger {order['id']}")
+
+    _validate_funding(sections[SECTION_HEADINGS[1]], snapshot)
+    _validate_sentiment(sections[SECTION_HEADINGS[2]], current_metrics)
+    _validate_comparative_table(sections[SECTION_HEADINGS[3]], snapshot)
+
+    practical = sections[SECTION_HEADINGS[4]]
+    if MODEL_BALANCE_LINE not in practical:
+        raise PipelineError("Section 5 must identify the separate 1 BTC + $20,000 USDT model balance")
+    trigger_lines = re.findall(r"(?im)^\s*[-*]\s+If\b.*$", practical)
+    if len(trigger_lines) < 2:
+        raise PipelineError("Section 5 must provide at least two conditional '- If' triggers with sizing")
+    for trigger in trigger_lines:
+        if len(re.findall(r"[-+]?\d[\d,.]*", trigger)) < 2 or not re.search(
+            r"\b(?:BTC|USDT)\b", trigger
+        ):
+            raise PipelineError("Every Section 5 trigger must include a price and explicit BTC/USDT sizing")
+    if "No trades are executed by this report." not in practical:
+        raise PipelineError("Section 5 must state that the report executes no trades")
+
+
+def generate_validated_report(
+    prompt: str,
+    generator: Callable[[str], str],
+    *,
+    snapshot: dict[str, Any],
+    current_metrics: dict[str, Any],
+    state: dict[str, Any],
+    max_attempts: int = MAX_REPORT_ATTEMPTS,
+) -> str:
+    if max_attempts < 1:
+        raise ValueError("max_attempts must be at least one")
+    attempt_prompt = prompt
+    last_error: PipelineError | None = None
+    for attempt in range(1, max_attempts + 1):
+        content = generator(attempt_prompt)
+        if not isinstance(content, str) or not content.strip():
+            last_error = PipelineError("Report generator returned no Markdown")
+        else:
+            content = content.strip()
+            try:
+                validate_report_markdown(
+                    content,
+                    snapshot=snapshot,
+                    current_metrics=current_metrics,
+                    state=state,
+                )
+                return content
+            except PipelineError as exc:
+                last_error = exc
+        if attempt < max_attempts:
+            attempt_prompt = (
+                "Repair your previous response by rewriting the entire report. It failed "
+                f"deterministic validation: {last_error}. Return only corrected Markdown.\n\n"
+                f"PREVIOUS INVALID RESPONSE:\n{content if isinstance(content, str) else ''}\n\n"
+                f"ORIGINAL INPUT:\n{prompt}"
+            )
+    raise PipelineError(
+        f"AI report failed structural validation after {max_attempts} attempts: {last_error}"
+    )
 
 
 def run_pipeline(
@@ -224,15 +461,18 @@ def run_pipeline(
 
     snapshot = snapshot_fetcher()
     metrics = build_metrics(previous, snapshot, float(initial_capital))
-    prompt = build_prompt(day, snapshot, previous["metrics"], state, metrics)
+    prompt = build_prompt(day, snapshot, previous, state, metrics)
     if report_generator is None:
-        content = generate_with_gemini(prompt, api_key or "")
+        generator = lambda value: generate_with_gemini(value, api_key or "")
     else:
-        content = report_generator(prompt)
-    if not isinstance(content, str) or not content.strip():
-        raise PipelineError("Report generator returned no Markdown")
-    content = content.strip()
-    validate_report_markdown(content)
+        generator = report_generator
+    content = generate_validated_report(
+        prompt,
+        generator,
+        snapshot=snapshot,
+        current_metrics=metrics,
+        state=state,
+    )
 
     timestamp = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     report = {

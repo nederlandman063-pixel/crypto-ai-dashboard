@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class BaselineContractTests(unittest.TestCase):
     def test_day_35_metrics_and_allocations_are_preserved(self):
         document = json.loads((ROOT / "data" / "reports.json").read_text(encoding="utf-8"))
-        report = document["reports"][0]
+        report = next(item for item in document["reports"] if item["day"] == 35)
         metrics = report["metrics"]
         self.assertEqual(report["day"], 35)
         self.assertEqual(document["initial_capital_usd"], 99960.0)

@@ -3,6 +3,133 @@
   "initial_capital_usd": 99960.0,
   "reports": [
     {
+      "day": 36,
+      "date": "2026-10-24",
+      "title": "Day 36 Quantitative Crypto Brief",
+      "content": "## 1. Executive Summary\nThe portfolio experienced a daily P&L of -0.31%, corresponding to a -$313.37 decrease, bringing the total portfolio value to $99,646.63. This follows a significantly positive previous day. The market sentiment has shifted from 'Greed' (62) to 'Neutral' (51) according to the Fear & Greed Index. All major portfolio holdings, including Bitcoin, Ethereum, Chainlink, and Solana, have seen 24-hour price declines. BTC Dominance remains stable at 58.8%.\n\n## 2. Market Snapshot\nAs of 2026-10-24 21:16:28 UTC, the overall market sentiment, as indicated by the Fear & Greed Index, is 'Neutral' at 51.\n\n**Key Market Data (24-hour change):**\n*   **BTCUSDT:** $80401.81, -1.258%, Volume: 12794.61 BTC\n*   **ETHUSDT:** $2337.26, -2.724%, Volume: 217221.15 ETH\n*   **LINKUSDT:** $11.503, -3.781%, Volume: 1954172.65 LINK\n*   **SOLUSDT:** $101.23, -2.738%, Volume: 1914242.84 SOL\n*   **ADAUSDT:** $0.2062, -3.869%, Volume: 88218859.7 ADA\n*   **BNBUSDT:** $732.00, -1.372%, Volume: 129805.43 BNB\n*   **DOGEUSDT:** $0.07709, -2.946%, Volume: 541144442.0 DOGE\n*   **XRPUSDT:** $1.2911, -1.375%, Volume: 81255404.9 XRP\n\nBitcoin dominance stands at 58.8%.\n\n## 3. Portfolio Performance\nThe portfolio's current value is $99,646.63. Today's P&L is -$313.37 (-0.31%). This contrasts with the previous day's P&L of $4,823.29 (4.83%) and a portfolio value of $104,783.29, indicating a significant total value decrease over the period. The cash ratio is 28.14%, with a cash reserve of $28,043.29.\n\n**Current Allocations:**\n*   **Bitcoin (BTC):** 0.5 BTC @ $80401.81 = $40,200.90 (40.34% of portfolio)\n*   **Cash + Limits (USDT):** $28,043.29 (28.14% of portfolio)\n*   **Ethereum (ETH):** 5.5866 ETH @ $2337.26 = $13,057.34 (13.10% of portfolio)\n*   **Solana (SOL):** 44.56 SOL @ $101.23 = $4,510.81 (4.53% of portfolio)\n*   **Chainlink (LINK):** 333.33 LINK @ $11.503 = $3,834.29 (3.85% of portfolio)\n\n## 4. Risk & Active Orders\nMarket sentiment is currently Neutral (Fear & Greed Index: 51), down from 'Greed' yesterday, suggesting a slight increase in market caution. Bitcoin dominance remains high at 58.8%, indicating continued focus on BTC.\n\nThere are no executed orders. The following five orders are currently pending:\n\n*   **BTCUSDT Limit Buy:** Buy 10000.0 USDT worth of BTC at a limit price of $84280.0. (Reserved: $10,000.00)\n*   **SOLUSDT Take Profit:** Sell 50% of SOL holdings at a trigger price of $117.4.\n*   **SOLUSDT Breakeven Stop:** Sell 50% of SOL holdings at a stop price of $112.2.\n*   **LINKUSDT Take Profit:** Sell 50% of LINK holdings at a trigger price of $15.9.\n*   **LINKUSDT Guaranteed Stop:** Sell 50% of LINK holdings at a stop price of $15.2.\n\nThe portfolio has $10,000.00 reserved for limit orders.\n\n## 5. Quantitative Outlook\nThe portfolio experienced a negative daily performance today, aligning with a broad market downturn across major crypto assets, including all current holdings. The shift in the Fear & Greed Index from 'Greed' to 'Neutral' suggests a decrease in market exuberance and potentially increased risk aversion.\n\nThe pending BTC buy limit order at $84280.0 is significantly above the current market price of $80401.81, indicating it is unlikely to be triggered in the immediate term given current market conditions. Similarly, the pending take-profit and stop orders for SOL and LINK are all above their respective current market prices. This positions them for potential profit realization if prices recover, but also means downside protection from the stop orders is not immediately active at current price levels.\n\nThe market's current trajectory suggests continued vigilance is warranted. The general downward trend and cooling sentiment highlight the inherent volatility and risk in crypto markets. Further price fluctuations and potential for increased risk are possible.",
+      "metrics": {
+        "portfolio_value": 99646.63,
+        "pnl_usd": -313.37,
+        "pnl_percent": -0.31,
+        "cash_reserve_usd": 28043.29,
+        "reserved_for_limits_usd": 10000.0,
+        "cash_ratio": 28.14,
+        "fear_greed": 51,
+        "btc_dominance": 58.8,
+        "allocations": [
+          {
+            "symbol": "BTC",
+            "label": "Bitcoin",
+            "quantity": 0.5,
+            "value_usd": 40200.9,
+            "price_usd": 80401.81
+          },
+          {
+            "symbol": "USDT",
+            "label": "Cash + Limits",
+            "quantity": 28043.29,
+            "value_usd": 28043.29
+          },
+          {
+            "symbol": "ETH",
+            "label": "Ethereum",
+            "quantity": 5.5866,
+            "value_usd": 13057.34,
+            "price_usd": 2337.26
+          },
+          {
+            "symbol": "LINK",
+            "label": "Chainlink",
+            "quantity": 333.33,
+            "value_usd": 3834.29,
+            "price_usd": 11.503
+          },
+          {
+            "symbol": "SOL",
+            "label": "Solana",
+            "quantity": 44.56,
+            "value_usd": 4510.81,
+            "price_usd": 101.23
+          }
+        ]
+      },
+      "market_snapshot": {
+        "as_of": "2026-10-24T21:16:28.664236+00:00",
+        "markets": {
+          "BTCUSDT": {
+            "high_24h": 81452.62,
+            "low_24h": 79220.74,
+            "last": 80401.81,
+            "volume_24h": 12794.61266,
+            "percent_change_24h": -1.258,
+            "last_funding_rate": 5.657e-05
+          },
+          "ETHUSDT": {
+            "high_24h": 2403.87,
+            "low_24h": 2282.46,
+            "last": 2337.26,
+            "volume_24h": 217221.1458,
+            "percent_change_24h": -2.724,
+            "last_funding_rate": -3.959e-05
+          },
+          "SOLUSDT": {
+            "high_24h": 104.09,
+            "low_24h": 98.62,
+            "last": 101.23,
+            "volume_24h": 1914242.841,
+            "percent_change_24h": -2.738,
+            "last_funding_rate": -3.142e-05
+          },
+          "BNBUSDT": {
+            "high_24h": 742.33,
+            "low_24h": 718.0,
+            "last": 732.0,
+            "volume_24h": 129805.426,
+            "percent_change_24h": -1.372,
+            "last_funding_rate": 0.0
+          },
+          "XRPUSDT": {
+            "high_24h": 1.3095,
+            "low_24h": 1.2546,
+            "last": 1.2911,
+            "volume_24h": 81255404.9,
+            "percent_change_24h": -1.375,
+            "last_funding_rate": 8.858e-05
+          },
+          "ADAUSDT": {
+            "high_24h": 0.2148,
+            "low_24h": 0.2005,
+            "last": 0.2062,
+            "volume_24h": 88218859.7,
+            "percent_change_24h": -3.869,
+            "last_funding_rate": -5.528e-05
+          },
+          "DOGEUSDT": {
+            "high_24h": 0.07955,
+            "low_24h": 0.07478,
+            "last": 0.07709,
+            "volume_24h": 541144442.0,
+            "percent_change_24h": -2.946,
+            "last_funding_rate": -1.3e-07
+          },
+          "LINKUSDT": {
+            "high_24h": 11.958,
+            "low_24h": 11.2,
+            "last": 11.503,
+            "volume_24h": 1954172.65,
+            "percent_change_24h": -3.781,
+            "last_funding_rate": 6.569e-05
+          }
+        },
+        "fear_greed": 51,
+        "sources": {
+          "spot": "https://data-api.binance.vision/api/v3/ticker/24hr",
+          "funding": "https://www.binance.com/fapi/v1/premiumIndex",
+          "fear_greed": "https://api.alternative.me/fng/"
+        }
+      }
+    },
+    {
       "day": 35,
       "date": "2026-10-23",
       "title": "Day 35 Quantitative Crypto Brief",

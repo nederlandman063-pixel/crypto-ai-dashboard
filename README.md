@@ -78,6 +78,8 @@ The test suite uses deterministic HTTP/Gemini doubles and runs an end-to-end Day
 
 The workflow serializes runs, commits only `data/reports.json` and `data/state.json` as `github-actions[bot]`, rebases/retries pushes, copies data into the Pages artifact, and deploys `public/`. The local implementation does not deploy anything by itself.
 
+For an initial Pages-only publication before the Gemini secret is available, manually run the workflow with `deploy_only` enabled. That mode deploys the current canonical report archive without generating or labeling a new AI report; scheduled runs and normal manual runs always execute the full analysis pipeline.
+
 ## Disclaimer
 
 This project is an educational research interface, not financial advice or an execution system. Public endpoints may be delayed, unavailable, or regionally blocked. AI analysis may be wrong. Independently verify data and consult a qualified professional before making financial decisions.

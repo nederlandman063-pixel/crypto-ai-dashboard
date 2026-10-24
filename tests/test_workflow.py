@@ -12,6 +12,9 @@ class WorkflowContractTests(unittest.TestCase):
         for fragment in (
             "cron: '0 0 * * *'",
             "workflow_dispatch:",
+            "deploy_only:",
+            "inputs.deploy_only != true",
+            "contents: read",
             "contents: write",
             "pages: write",
             "id-token: write",

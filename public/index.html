@@ -1,160 +1,518 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Daily quantitative crypto portfolio intelligence dashboard">
-  <title>Crypto Intelligence // Quant Console</title>
+  <meta name="description" content="NEXUS_TRADER — динамическая панель криптоаналитики">
+  <title>NEXUS_TRADER // Crypto AI Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.7/dist/purify.min.js"></script>
   <style>
-    :root { color-scheme: dark; --cyan: #5ee7ff; --violet: #a78bfa; --panel: rgba(8, 18, 35, .66); }
+    :root {
+      color-scheme: dark;
+      --ink: #030712;
+      --panel: rgba(9, 14, 26, .78);
+      --card: rgba(15, 23, 42, .64);
+      --cyan: #00f3ff;
+      --magenta: #ff00ea;
+      --purple: #a855f7;
+      --green: #34d399;
+      --muted: #94a3b8;
+      --line: rgba(0, 243, 255, .18);
+    }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 20% 0%, #102b4d 0, #050914 40%, #02040a 100%); color: #d9f7ff; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
-    #scene { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: .72; }
-    .shell { position: relative; z-index: 1; }
-    .glass { background: var(--panel); border: 1px solid rgba(94, 231, 255, .18); box-shadow: inset 0 1px rgba(255,255,255,.05), 0 22px 60px rgba(0,0,0,.3); backdrop-filter: blur(18px); }
-    .metric { position: relative; overflow: hidden; }
-    .metric::after { content: ""; position: absolute; inset: auto 0 0; height: 1px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
-    .eyebrow { letter-spacing: .22em; text-transform: uppercase; color: #7dd3fc; font-size: .7rem; }
-    .value { font-variant-numeric: tabular-nums; text-shadow: 0 0 24px rgba(94,231,255,.22); }
-    .report h2 { margin: 1.65rem 0 .65rem; color: #a5f3fc; font-size: 1.1rem; letter-spacing: .04em; }
-    .report p, .report li { color: #c5d5e5; line-height: 1.75; }
-    .report ul, .report ol { padding-left: 1.4rem; }
-    .archive-button[aria-current="true"] { border-color: rgba(94,231,255,.75); background: rgba(34,211,238,.12); color: white; }
-    .allocation-track { background: rgba(148,163,184,.09); }
-    .allocation-fill { background: linear-gradient(90deg, #22d3ee, #8b5cf6); box-shadow: 0 0 16px rgba(34,211,238,.35); }
-    @media (prefers-reduced-motion: reduce) { #scene { display: none; } * { scroll-behavior: auto !important; } }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: #f8fafc;
+      background: #030712;
+      font-family: "Space Grotesk", sans-serif;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, a:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 3px;
+    }
+    #webgl-bg { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; }
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: .28;
+      background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,.24) 50%);
+      background-size: 100% 4px;
+    }
+    .app-shell { position: relative; z-index: 2; min-height: 100vh; }
+    .mono { font-family: "Share Tech Mono", monospace; }
+    .glass {
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(15,23,42,.78), rgba(9,14,26,.9));
+      box-shadow: 0 18px 48px -18px rgba(0,0,0,.85), inset 0 1px rgba(255,255,255,.035);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .glass-card {
+      border: 1px solid rgba(0,243,255,.12);
+      background: var(--card);
+      box-shadow: inset 0 1px rgba(255,255,255,.025);
+    }
+    .glass-card, .archive-item { transition: transform .25s ease, border-color .25s ease, background .25s ease; }
+    .glass-card:hover, .archive-item:hover { transform: translateY(-2px); border-color: rgba(0,243,255,.45); }
+    .neon { color: var(--cyan); text-shadow: 0 0 12px rgba(0,243,255,.68), 0 0 28px rgba(0,243,255,.24); }
+    .eyebrow { color: #9ca3af; font: .72rem "Share Tech Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
+    .hud { position: sticky; top: 0; z-index: 40; padding: 1rem 1rem .5rem; }
+    .hud-inner { max-width: 80rem; margin: 0 auto; border-top: 2px solid var(--cyan); border-radius: 1rem; padding: .85rem 1rem; }
+    .brand-mark {
+      display: grid; place-items: center; position: relative; width: 2.75rem; height: 2.75rem; flex: 0 0 auto;
+      border: 1px solid rgba(0,243,255,.5); border-radius: .75rem; background: rgba(8,145,178,.12);
+      box-shadow: 0 0 18px rgba(0,243,255,.26);
+    }
+    .status-beacon { width: .55rem; height: .55rem; border-radius: 999px; background: #fbbf24; box-shadow: 0 0 10px currentColor; }
+    .status-beacon.online { color: var(--green); background: var(--green); }
+    .status-beacon.error { color: #fb7185; background: #fb7185; }
+    .nav-group { display: flex; gap: .4rem; padding: .35rem; border: 1px solid rgba(0,243,255,.16); border-radius: .8rem; background: rgba(3,7,18,.72); }
+    .nav-button { border: 1px solid transparent; border-radius: .6rem; padding: .58rem .85rem; color: #94a3b8; background: transparent; font: .82rem "Share Tech Mono", monospace; white-space: nowrap; }
+    .nav-button[aria-selected="true"] { color: var(--cyan); border-color: rgba(0,243,255,.42); background: rgba(8,145,178,.12); box-shadow: 0 0 14px rgba(0,243,255,.16); }
+    .ticker { display: grid; grid-template-columns: repeat(3, minmax(5.5rem, 1fr)); gap: 1rem; }
+    .view { max-width: 80rem; width: 100%; margin: 0 auto; padding: 1rem; }
+    .view[hidden] { display: none !important; }
+    .view-enter { animation: reveal .32s ease both; }
+    @keyframes reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    .hero { position: relative; overflow: hidden; padding: clamp(1.35rem, 3vw, 2.2rem); border-color: rgba(0,243,255,.34); }
+    .hero::before, .hero::after { content: ""; position: absolute; width: 18rem; height: 18rem; border-radius: 50%; filter: blur(70px); pointer-events: none; }
+    .hero::before { right: -8rem; bottom: -10rem; background: rgba(0,243,255,.2); }
+    .hero::after { left: -10rem; top: -12rem; background: rgba(168,85,247,.19); }
+    .hero-content { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 2rem; }
+    .hero h2 { margin: .65rem 0 .5rem; max-width: 52rem; font-size: clamp(1.7rem, 4vw, 2.7rem); line-height: 1.08; }
+    .hero-copy { color: #cbd5e1; max-width: 48rem; line-height: 1.65; }
+    .cta { flex: 0 0 auto; border: 0; border-radius: .8rem; padding: .9rem 1.15rem; color: #020617; font-weight: 700; background: linear-gradient(110deg, var(--cyan), #3b82f6); box-shadow: 0 0 26px rgba(0,243,255,.28); }
+    .cta:hover { filter: brightness(1.12); }
+    .metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .8rem; margin-top: 1rem; }
+    .metric { min-width: 0; padding: 1rem; border-radius: .85rem; }
+    .metric-value { margin-top: .35rem; font: 700 clamp(1.15rem, 2vw, 1.5rem) "Share Tech Mono", monospace; overflow-wrap: anywhere; }
+    .metric-note { margin-top: .32rem; color: #64748b; font-size: .72rem; line-height: 1.35; }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr); gap: 1rem; margin-top: 1rem; }
+    .panel { min-width: 0; border-radius: 1rem; padding: 1.25rem; }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0 0 1rem; }
+    .panel-title h3 { margin: 0; font-size: 1.02rem; }
+    .spark { width: .56rem; height: .56rem; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 9px var(--cyan); }
+    .chart-wrap { position: relative; height: 19rem; min-width: 0; }
+    .chart-wrap.compact { height: 15.5rem; }
+    .chart-fallback { display: grid; place-items: center; min-height: 8rem; padding: 1rem; border: 1px dashed rgba(148,163,184,.25); border-radius: .8rem; color: #94a3b8; text-align: center; }
+    .allocation-legend { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .75rem; }
+    .legend-item { display: flex; align-items: center; gap: .45rem; min-width: 0; color: #cbd5e1; font: .72rem "Share Tech Mono", monospace; }
+    .legend-swatch { width: .5rem; height: .5rem; border-radius: 50%; flex: 0 0 auto; }
+    .lower-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+    .stack { display: grid; gap: .65rem; }
+    .holding { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem; align-items: center; padding: .82rem; border-radius: .75rem; }
+    .holding-symbol { display: inline-grid; place-items: center; width: 2rem; height: 2rem; margin-right: .65rem; border-radius: 50%; color: var(--cyan); border: 1px solid rgba(0,243,255,.32); background: rgba(0,243,255,.08); }
+    .holding-main { display: flex; align-items: center; min-width: 0; }
+    .holding-name, .holding-value { font: 700 .86rem "Share Tech Mono", monospace; }
+    .holding-detail { color: #94a3b8; font: .7rem "Share Tech Mono", monospace; overflow-wrap: anywhere; }
+    .funding-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+    .funding { padding: .85rem; border-radius: .75rem; }
+    .funding-rate { margin-top: .35rem; font: 700 1rem "Share Tech Mono", monospace; color: var(--green); }
+    .notice { margin-top: .8rem; padding: .9rem; border-radius: .75rem; border: 1px solid rgba(255,0,234,.2); background: rgba(255,0,234,.045); color: #cbd5e1; line-height: 1.5; }
+    .meta-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 1rem; margin-top: .8rem; color: #64748b; font: .7rem "Share Tech Mono", monospace; }
+    .analytics-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .back-button { border: 1px solid rgba(0,243,255,.22); border-radius: .65rem; padding: .65rem .8rem; color: var(--cyan); background: rgba(15,23,42,.55); }
+    .search-wrap { position: relative; width: min(100%, 24rem); }
+    .search-wrap input { width: 100%; border: 1px solid rgba(0,243,255,.25); border-radius: .7rem; padding: .7rem .9rem; color: white; background: rgba(3,7,18,.72); }
+    .analytics-grid { display: grid; grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr); gap: 1rem; margin-top: 1rem; align-items: start; }
+    .archive-panel { max-height: 49rem; display: flex; flex-direction: column; }
+    .archive-list { display: grid; gap: .55rem; overflow: auto; padding-right: .25rem; }
+    .archive-item { width: 100%; border: 1px solid rgba(148,163,184,.14); border-radius: .7rem; padding: .75rem; color: #cbd5e1; text-align: left; background: rgba(15,23,42,.42); }
+    .archive-item[aria-current="true"] { color: white; border-color: rgba(0,243,255,.68); background: rgba(8,145,178,.14); box-shadow: 0 0 15px rgba(0,243,255,.12); }
+    .archive-item-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .archive-item-meta { display: flex; justify-content: space-between; gap: .5rem; margin-top: .3rem; color: #64748b; font: .7rem "Share Tech Mono", monospace; }
+    .report-header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0,243,255,.16); }
+    .report-header h2 { margin: .4rem 0 0; font-size: clamp(1.45rem, 3vw, 2rem); }
+    .report-metric { flex: 0 0 auto; padding: .65rem .8rem; border: 1px solid rgba(0,243,255,.18); border-radius: .7rem; background: rgba(3,7,18,.55); text-align: right; }
+    .report { overflow-wrap: anywhere; }
+    .report h1, .report h2, .report h3 { color: #a5f3fc; line-height: 1.25; margin: 1.45rem 0 .6rem; }
+    .report h1 { font-size: 1.35rem; } .report h2 { font-size: 1.18rem; } .report h3 { font-size: 1.05rem; }
+    .report p, .report li { color: #cbd5e1; line-height: 1.7; }
+    .report ul, .report ol { padding-left: 1.35rem; }
+    .report code { color: #e879f9; font-family: "Share Tech Mono", monospace; }
+    .report a { color: var(--cyan); }
+    .report table { width: 100%; min-width: 42rem; border-collapse: collapse; font: .76rem "Share Tech Mono", monospace; }
+    .report th, .report td { padding: .65rem; border: 1px solid rgba(0,243,255,.13); text-align: left; }
+    .report th { color: var(--cyan); background: rgba(15,23,42,.82); }
+    .report-table-scroll { max-width: 100%; overflow-x: auto; }
+    .empty { color: #94a3b8; line-height: 1.55; }
+    footer { padding: 2rem 1rem; color: #64748b; text-align: center; font: .7rem "Share Tech Mono", monospace; }
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: rgba(3,7,18,.72); }
+    ::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(0,243,255,.35); }
+    @media (max-width: 1024px) {
+      .ticker { display: none; }
+      .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .hud { padding: .5rem; }
+      .hud-inner { display: grid !important; gap: .7rem; padding: .75rem; }
+      .brand-row { justify-content: center; }
+      .nav-group { width: 100%; }
+      .nav-button { flex: 1; padding: .55rem .35rem; font-size: .72rem; white-space: normal; }
+      .view { padding: .65rem; }
+      .hero-content, .analytics-toolbar, .report-header { align-items: stretch; flex-direction: column; }
+      .cta, .search-wrap { width: 100%; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .lower-grid, .analytics-grid { grid-template-columns: 1fr; }
+      .archive-panel { max-height: 27rem; }
+      .report-metric { text-align: left; }
+    }
+    @media (max-width: 420px) {
+      .metrics, .funding-grid { grid-template-columns: 1fr; }
+      .allocation-legend { grid-template-columns: 1fr; }
+      .holding { grid-template-columns: 1fr; }
+      .holding-value { text-align: left !important; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      #webgl-bg { display: none; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
   </style>
 </head>
 <body>
-  <canvas id="scene" aria-hidden="true"></canvas>
-  <main class="shell max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-    <header class="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-8">
-      <div>
-        <p class="eyebrow">Autonomous market intelligence</p>
-        <h1 class="mt-2 text-3xl sm:text-5xl font-black tracking-tight">QUANT<span class="text-cyan-300">//</span>ORBIT</h1>
-        <p class="mt-3 text-slate-400 max-w-2xl">Daily public-market telemetry, portfolio accounting, and Gemini-generated risk analysis.</p>
-      </div>
-      <div class="glass rounded-2xl px-5 py-3 flex items-center gap-3" role="status" aria-live="polite">
-        <span id="status-dot" class="w-2 h-2 rounded-full bg-amber-300 animate-pulse"></span>
-        <div><p class="eyebrow">Data link</p><p id="data-status" class="text-sm">Synchronizing…</p></div>
+  <div id="webgl-bg" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="app-shell">
+    <header class="hud" data-testid="hud">
+      <div class="hud-inner glass flex items-center justify-between gap-5">
+        <div class="brand-row flex items-center gap-3">
+          <div class="brand-mark mono neon" aria-hidden="true">AI<span id="status-dot" class="status-beacon absolute -right-1 -top-1"></span></div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap"><strong class="text-xl">NEXUS<span class="neon">_TRADER</span></strong><span id="hud-cycle" class="mono text-xs text-purple-300">CYCLE —</span></div>
+            <div id="data-status" class="mono text-xs text-slate-400" role="status" aria-live="polite">Синхронизация данных…</div>
+          </div>
+        </div>
+        <nav class="nav-group" role="tablist" aria-label="Разделы панели" data-testid="primary-nav">
+          <button id="nav-btn-dashboard" class="nav-button" type="button" role="tab" aria-selected="true" aria-controls="view-dashboard">Главная</button>
+          <button id="nav-btn-analytics" class="nav-button" type="button" role="tab" aria-selected="false" aria-controls="view-analytics">Аналитика и Архив</button>
+        </nav>
+        <div class="ticker mono" aria-label="Краткая сводка">
+          <div><span class="eyebrow block">Портфель</span><strong id="ticker-portfolio">Нет данных</strong></div>
+          <div><span class="eyebrow block">PnL</span><strong id="ticker-pnl">Нет данных</strong></div>
+          <div><span class="eyebrow block">USDT</span><strong id="ticker-cash">Нет данных</strong></div>
+        </div>
       </div>
     </header>
 
-    <section aria-label="Portfolio metrics" class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-      <article class="glass metric rounded-2xl p-4 sm:p-5 col-span-2"><p class="eyebrow">Portfolio value</p><p id="metric-portfolio-val" class="value text-3xl sm:text-5xl font-bold mt-2">—</p><p id="report-date" class="text-xs text-slate-500 mt-2">Awaiting data</p></article>
-      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">PnL</p><p id="metric-pnl-val" class="value text-2xl font-bold mt-2">—</p><p id="pnl-percent" class="text-sm mt-1">—</p></article>
-      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">Liquid cash</p><p id="metric-cash-val" class="value text-2xl font-bold mt-2">—</p><p class="text-sm text-slate-400 mt-1"><span id="cash-ratio">—</span> of NAV</p></article>
-      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">Fear & Greed</p><p id="metric-fng-val" class="value text-2xl font-bold mt-2">—</p><p class="text-xs text-slate-500 mt-1">0 fear · 100 greed</p></article>
-      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">BTC dominance</p><p id="btc-dominance" class="value text-2xl font-bold mt-2">—</p><p class="text-xs text-slate-500 mt-1">Market share</p></article>
-      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">Reserved limits</p><p id="reserved-for-limits-usd" class="value text-2xl font-bold mt-2">—</p><p class="text-xs text-slate-500 mt-1">Excluded from liquid ratio</p></article>
-      <article class="glass metric rounded-2xl p-4 sm:p-5"><p class="eyebrow">Analysis cycle</p><p id="current-day" class="value text-2xl font-bold mt-2">—</p><p class="text-xs text-slate-500 mt-1">Latest archived brief</p></article>
-    </section>
+    <main>
+      <section id="view-dashboard" class="view view-enter" role="tabpanel" aria-labelledby="nav-btn-dashboard" data-testid="dashboard-view">
+        <section class="hero glass rounded-2xl" data-testid="hero-panel">
+          <div class="hero-content">
+            <div>
+              <div id="hero-badge" class="mono text-xs neon">СВЕЖИЙ ОБЗОР: ЗАГРУЗКА</div>
+              <h2 id="hero-title">Подключение к аналитическому контуру</h2>
+              <p id="hero-copy" class="hero-copy">Показатели появятся только после загрузки канонического архива.</p>
+            </div>
+            <button id="hero-cta" class="cta mono" type="button">Открыть ежедневную аналитику →</button>
+          </div>
+        </section>
 
-    <section class="grid lg:grid-cols-[1fr_2fr] gap-4 mt-4">
-      <aside class="space-y-4">
-        <div class="glass rounded-2xl p-5">
-          <div class="flex justify-between items-center"><h2 class="font-semibold">Allocation field</h2><span class="eyebrow">Live value</span></div>
-          <div id="allocations" class="mt-5 space-y-4"><p class="text-sm text-slate-500">No allocation data.</p></div>
+        <section class="metrics" aria-label="Ключевые показатели" data-testid="kpi-grid">
+          <article class="metric glass-card"><div class="eyebrow">Стартовый капитал</div><div id="metric-initial-val" class="metric-value">Нет данных</div><div class="metric-note">База из reports.json</div></article>
+          <article class="metric glass-card"><div class="eyebrow">Текущий баланс</div><div id="metric-portfolio-val" class="metric-value neon">Нет данных</div><div id="report-date" class="metric-note">Дата недоступна</div></article>
+          <article class="metric glass-card"><div class="eyebrow">Доходность / PnL</div><div id="metric-pnl-val" class="metric-value">Нет данных</div><div id="pnl-percent" class="metric-note">Недоступно</div></article>
+          <article class="metric glass-card"><div class="eyebrow">Кэш-подушка</div><div id="metric-cash-val" class="metric-value">Нет данных</div><div class="metric-note"><span id="cash-ratio">Недоступно</span> · лимиты <span id="reserved-for-limits-usd">Недоступно</span></div></article>
+          <article class="metric glass-card"><div class="eyebrow">Fear & Greed</div><div id="metric-fng-val" class="metric-value">Нет данных</div><div class="metric-note">0 страх · 100 жадность</div></article>
+          <article class="metric glass-card"><div class="eyebrow">BTC доминирование</div><div id="btc-dominance" class="metric-value">Нет данных</div><div class="metric-note">Цикл <span id="current-day">—</span></div></article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article id="performance-panel" class="panel glass" data-testid="performance-panel">
+            <div class="panel-title"><div class="flex items-center gap-2"><span class="spark"></span><h3>Динамика отслеживаемого портфеля</h3></div><span id="performance-range" class="eyebrow">Архив</span></div>
+            <div class="chart-wrap"><canvas id="performanceChart" aria-label="График стоимости портфеля" role="img"></canvas><div id="performance-chart-fallback" class="chart-fallback" data-testid="performance-chart-fallback">Загрузка истории…</div></div>
+          </article>
+          <article id="allocation-panel" class="panel glass" data-testid="allocation-panel">
+            <div class="panel-title"><div class="flex items-center gap-2"><span class="spark" style="background:var(--purple);box-shadow:0 0 9px var(--purple)"></span><h3>Распределение активов</h3></div></div>
+            <div class="chart-wrap compact"><canvas id="allocationChart" aria-label="Диаграмма распределения активов" role="img"></canvas><div id="allocation-chart-fallback" class="chart-fallback" data-testid="allocation-chart-fallback">Загрузка аллокаций…</div></div>
+            <div id="allocation-legend" class="allocation-legend"></div>
+          </article>
+        </section>
+
+        <section class="lower-grid">
+          <article id="holdings-panel" class="panel glass" data-testid="holdings-panel">
+            <div class="panel-title"><h3>Активы отслеживаемого портфеля</h3><span id="holdings-count" class="eyebrow">0 позиций</span></div>
+            <div id="holdings-list" class="stack"><p class="empty">Нет данных</p></div>
+          </article>
+          <article id="derivatives-panel" class="panel glass" data-testid="derivatives-panel">
+            <div class="panel-title"><h3>Пульс деривативов</h3><span class="eyebrow">Binance funding</span></div>
+            <div id="funding-list" class="funding-grid"><p class="empty">Нет данных</p></div>
+            <div class="notice"><strong class="mono text-fuchsia-300">Ликвидации:</strong> Недоступно — данные не поступают в текущий конвейер.</div>
+            <div class="notice"><strong class="mono text-cyan-300">Контекст модели:</strong> отслеживаемый портфель показан отдельно от аналитической модели «1 BTC + $20k». Триггеры в отчетах не означают исполнение ордеров.</div>
+            <div class="meta-row"><span id="snapshot-source">Источник: data/reports.json</span><span id="last-updated">Обновление: недоступно</span></div>
+          </article>
+        </section>
+      </section>
+
+      <section id="view-analytics" class="view" role="tabpanel" aria-labelledby="nav-btn-analytics" data-testid="analytics-view" hidden>
+        <div class="analytics-toolbar panel glass">
+          <button id="back-dashboard" class="back-button mono" type="button">← Вернуться на главный дашборд</button>
+          <label class="search-wrap"><span class="sr-only">Поиск по архиву</span><input id="archive-search" type="search" autocomplete="off" placeholder="Поиск по дню, дате или тексту…" aria-controls="archive-list"></label>
         </div>
-        <div class="glass rounded-2xl p-5">
-          <h2 class="font-semibold">Report archive</h2>
-          <div id="archive" class="mt-4 grid gap-2"><p class="text-sm text-slate-500">No archived reports.</p></div>
+        <div class="analytics-grid">
+          <aside id="archive-panel" class="panel glass archive-panel" data-testid="archive-panel">
+            <div class="panel-title"><h3 class="neon mono">Архив обзоров</h3><span id="archive-count" class="eyebrow">0 записей</span></div>
+            <div id="archive-list" class="archive-list" aria-live="polite"><p class="empty">Загрузка архива…</p></div>
+            <div id="archive-empty" class="chart-fallback" data-testid="archive-empty" hidden>Совпадений не найдено.</div>
+          </aside>
+          <article id="report-panel" class="panel glass" data-testid="report-panel">
+            <header class="report-header">
+              <div><div id="report-kicker" class="eyebrow">Отчет AI-агента</div><h2 id="report-title">Загрузка аналитики…</h2></div>
+              <div class="report-metric"><span class="eyebrow block">Оценка счета</span><strong id="report-balance" class="mono neon">Нет данных</strong><span id="report-pnl" class="mono text-xs block mt-1">Недоступно</span></div>
+            </header>
+            <div id="report-content" class="report mt-6"><p class="empty">Установка защищенного соединения с архивом.</p></div>
+          </article>
         </div>
-      </aside>
-      <article class="glass rounded-2xl p-5 sm:p-8 min-h-[32rem]">
-        <div class="border-b border-cyan-100/10 pb-5">
-          <p id="report-kicker" class="eyebrow">Analysis stream</p>
-          <h2 id="report-title" class="text-2xl sm:text-3xl font-bold mt-2">Loading quantitative brief…</h2>
-        </div>
-        <div id="report-content" class="report mt-6"><p class="text-slate-400">Establishing secure data link.</p></div>
-      </article>
-    </section>
-    <footer class="text-center text-xs text-slate-600 mt-8">Research interface only · not financial advice · orders shown in data are not executed by this dashboard</footer>
-  </main>
+      </section>
+    </main>
+
+    <footer>NEXUS CRYPTO AI ENGINE · ИССЛЕДОВАТЕЛЬСКИЙ ИНТЕРФЕЙС · НЕ ФИНАНСОВЫЙ СОВЕТ · ПАНЕЛЬ НЕ ИСПОЛНЯЕТ ОРДЕРА</footer>
+  </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-    const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
-    let reports = [];
+    const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+    const decimal = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 4 });
+    const compactMoney = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 });
+    const palette = ['#f59e0b', '#34d399', '#3b82f6', '#00f3ff', '#a855f7', '#ff00ea', '#fb7185', '#94a3b8'];
+    const state = { reports: [], filtered: [], selected: null, initialCapital: null, performanceChart: null, allocationChart: null };
 
-    function setStatus(message, ok = false) {
+    function isFiniteNumber(value) { return value !== null && value !== '' && Number.isFinite(Number(value)); }
+    function formatMoney(value) { return isFiniteNumber(value) ? money.format(Number(value)) : 'Нет данных'; }
+    function formatPercent(value, signed = false) {
+      if (!isFiniteNumber(value)) return 'Недоступно';
+      const numeric = Number(value);
+      return `${signed && numeric > 0 ? '+' : ''}${decimal.format(numeric)}%`;
+    }
+    function formatDate(value) {
+      if (!value) return 'Дата недоступна';
+      const parsed = new Date(value.length === 10 ? `${value}T00:00:00Z` : value);
+      return Number.isNaN(parsed.getTime()) ? String(value) : new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(parsed);
+    }
+    function setStatus(message, mode = 'loading') {
       $('data-status').textContent = message;
-      $('status-dot').className = `w-2 h-2 rounded-full ${ok ? 'bg-cyan-300' : 'bg-rose-400'}`;
+      $('status-dot').className = `status-beacon absolute -right-1 -top-1 ${mode === 'online' ? 'online' : mode === 'error' ? 'error' : ''}`;
+    }
+    function node(tag, className, text) {
+      const element = document.createElement(tag);
+      if (className) element.className = className;
+      if (text !== undefined) element.textContent = text;
+      return element;
     }
 
-    function renderAllocations(metrics) {
-      const host = $('allocations');
-      host.replaceChildren();
-      const allocations = Array.isArray(metrics.allocations) ? metrics.allocations : [];
-      if (!allocations.length) { host.textContent = 'No allocation data.'; return; }
-      const max = Math.max(...allocations.map((item) => Number(item.value_usd) || 0), 1);
+    function switchView(viewName, focusHeading = false) {
+      const analytics = viewName === 'analytics';
+      $('view-dashboard').hidden = analytics;
+      $('view-analytics').hidden = !analytics;
+      $('nav-btn-dashboard').setAttribute('aria-selected', String(!analytics));
+      $('nav-btn-analytics').setAttribute('aria-selected', String(analytics));
+      const active = analytics ? $('view-analytics') : $('view-dashboard');
+      active.classList.remove('view-enter');
+      requestAnimationFrame(() => active.classList.add('view-enter'));
+      if (focusHeading && analytics) $('report-title').focus?.();
+      window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      requestAnimationFrame(() => { state.performanceChart?.resize(); state.allocationChart?.resize(); });
+    }
+
+    function renderMetrics(report) {
+      const metrics = report?.metrics || {};
+      const pnl = isFiniteNumber(metrics.pnl_usd) ? Number(metrics.pnl_usd) : null;
+      $('metric-initial-val').textContent = formatMoney(state.initialCapital);
+      $('metric-portfolio-val').textContent = formatMoney(metrics.portfolio_value);
+      $('metric-pnl-val').textContent = pnl === null ? 'Нет данных' : `${pnl > 0 ? '+' : ''}${money.format(pnl)}`;
+      $('metric-pnl-val').style.color = pnl === null ? '' : pnl < 0 ? '#fb7185' : '#34d399';
+      $('pnl-percent').textContent = formatPercent(metrics.pnl_percent, true);
+      $('metric-cash-val').textContent = formatMoney(metrics.cash_reserve_usd);
+      $('cash-ratio').textContent = formatPercent(metrics.cash_ratio);
+      $('reserved-for-limits-usd').textContent = formatMoney(metrics.reserved_for_limits_usd);
+      $('metric-fng-val').textContent = isFiniteNumber(metrics.fear_greed) ? decimal.format(Number(metrics.fear_greed)) : 'Нет данных';
+      $('btc-dominance').textContent = formatPercent(metrics.btc_dominance);
+      $('current-day').textContent = report?.day == null ? '—' : `DAY ${report.day}`;
+      $('report-date').textContent = formatDate(report?.date);
+      $('hud-cycle').textContent = report?.day == null ? 'CYCLE —' : `CYCLE ${report.day}D+`;
+      $('ticker-portfolio').textContent = formatMoney(metrics.portfolio_value);
+      $('ticker-pnl').textContent = formatPercent(metrics.pnl_percent, true);
+      $('ticker-cash').textContent = formatPercent(metrics.cash_ratio);
+    }
+
+    function renderHero(report) {
+      $('hero-badge').textContent = report?.day == null ? 'СВЕЖИЙ ОБЗОР: НЕДОСТУПЕН' : `СВЕЖИЙ ОБЗОР: ДЕНЬ ${report.day} · ${formatDate(report.date)}`;
+      $('hero-title').textContent = report?.title || 'Аналитический обзор недоступен';
+      $('hero-copy').textContent = report?.content ? 'Полная проверяемая Markdown-сводка, рыночный снимок и история показателей доступны в архиве.' : 'Для этой записи нет текста отчета.';
+    }
+
+    function renderHoldings(report) {
+      const host = $('holdings-list'); host.replaceChildren();
+      const allocations = Array.isArray(report?.metrics?.allocations) ? report.metrics.allocations : [];
+      $('holdings-count').textContent = `${allocations.length} позиций`;
+      if (!allocations.length) { host.append(node('p', 'empty', 'Нет данных об активах.')); return; }
       allocations.forEach((item) => {
-        const row = document.createElement('div');
-        const top = document.createElement('div');
-        top.className = 'flex justify-between text-sm mb-1.5';
-        const label = document.createElement('span');
-        label.className = 'font-medium text-slate-200';
-        label.textContent = item.label || item.symbol || 'Asset';
-        const value = document.createElement('span');
-        value.className = 'text-slate-400 tabular-nums';
-        value.textContent = money.format(Number(item.value_usd) || 0);
-        top.append(label, value);
-        const track = document.createElement('div');
-        track.className = 'allocation-track h-1.5 rounded-full overflow-hidden';
-        const fill = document.createElement('div');
-        fill.className = 'allocation-fill h-full rounded-full';
-        fill.style.width = `${Math.max(2, ((Number(item.value_usd) || 0) / max) * 100)}%`;
-        track.append(fill); row.append(top, track); host.append(row);
+        const row = node('div', 'holding glass-card');
+        const left = node('div', 'holding-main');
+        left.append(node('span', 'holding-symbol mono', String(item.symbol || '?').slice(0, 2)));
+        const copy = node('div');
+        copy.append(node('div', 'holding-name', item.label || item.symbol || 'Актив'));
+        const details = [];
+        if (isFiniteNumber(item.quantity)) details.push(`${decimal.format(Number(item.quantity))} ${item.symbol || ''}`.trim());
+        if (isFiniteNumber(item.price_usd)) details.push(`цена ${formatMoney(item.price_usd)}`);
+        copy.append(node('div', 'holding-detail', details.length ? details.join(' · ') : 'Количество и цена недоступны'));
+        left.append(copy);
+        const value = node('div', 'holding-value text-right', formatMoney(item.value_usd));
+        row.append(left, value); host.append(row);
       });
     }
 
-    function renderReport(report) {
-      if (!report || typeof report !== 'object') return;
-      const metrics = report.metrics || {};
-      $('metric-portfolio-val').textContent = money.format(Number(metrics.portfolio_value) || 0);
-      const pnl = Number(metrics.pnl_usd) || 0;
-      $('metric-pnl-val').textContent = `${pnl >= 0 ? '+' : ''}${money.format(pnl)}`;
-      $('metric-pnl-val').classList.toggle('text-rose-300', pnl < 0);
-      $('metric-pnl-val').classList.toggle('text-emerald-300', pnl >= 0);
-      $('pnl-percent').textContent = `${Number(metrics.pnl_percent) >= 0 ? '+' : ''}${number.format(Number(metrics.pnl_percent) || 0)}%`;
-      $('metric-cash-val').textContent = money.format(Number(metrics.cash_reserve_usd) || 0);
-      $('cash-ratio').textContent = `${number.format(Number(metrics.cash_ratio) || 0)}%`;
-      $('metric-fng-val').textContent = number.format(Number(metrics.fear_greed) || 0);
-      $('btc-dominance').textContent = metrics.btc_dominance == null ? 'N/A' : `${number.format(Number(metrics.btc_dominance))}%`;
-      $('reserved-for-limits-usd').textContent = money.format(Number(metrics.reserved_for_limits_usd) || 0);
-      $('current-day').textContent = `DAY ${report.day ?? '—'}`;
-      $('report-date').textContent = report.date ? `Snapshot ${report.date}` : 'Date unavailable';
-      $('report-kicker').textContent = `Archive // Day ${report.day ?? '—'}`;
-      $('report-title').textContent = report.title || 'Untitled report';
-      try {
-        if (!report.content || typeof report.content !== 'string') throw new Error('Report content is empty');
-        $('report-content').innerHTML = DOMPurify.sanitize(marked.parse(report.content));
-      } catch (error) {
-        $('report-content').replaceChildren();
-        const message = document.createElement('p');
-        message.className = 'text-rose-300';
-        message.textContent = `Report could not be rendered: ${error.message}`;
-        $('report-content').append(message);
+    function renderFunding(report) {
+      const host = $('funding-list'); host.replaceChildren();
+      const markets = report?.market_snapshot?.markets;
+      const entries = markets && typeof markets === 'object'
+        ? Object.entries(markets).filter(([, item]) => isFiniteNumber(item?.last_funding_rate)).sort(([a], [b]) => a.localeCompare(b))
+        : [];
+      if (!entries.length) { host.append(node('p', 'empty', 'Ставки финансирования недоступны.')); }
+      entries.forEach(([symbol, market]) => {
+        const card = node('div', 'funding glass-card');
+        card.append(node('div', 'eyebrow', symbol));
+        card.append(node('div', 'funding-rate', formatPercent(Number(market.last_funding_rate) * 100, true)));
+        host.append(card);
+      });
+      const asOf = report?.market_snapshot?.as_of;
+      $('last-updated').textContent = `Обновление: ${asOf ? formatDate(asOf) : 'недоступно'}`;
+      const sources = report?.market_snapshot?.sources;
+      const labels = sources && typeof sources === 'object' ? Object.keys(sources).join(', ') : '';
+      $('snapshot-source').textContent = `Источник: data/reports.json${labels ? ` · ${labels}` : ''}`;
+    }
+
+    function destroyChart(key) {
+      if (state[key]) { state[key].destroy(); state[key] = null; }
+    }
+    function renderPerformanceChart() {
+      destroyChart('performanceChart');
+      const canvas = $('performanceChart');
+      const fallback = $('performance-chart-fallback');
+      const points = [...state.reports]
+        .filter((report) => isFiniteNumber(report?.metrics?.portfolio_value))
+        .sort((a, b) => Number(a.day) - Number(b.day));
+      $('performance-range').textContent = points.length ? `ДНИ ${points[0].day}—${points[points.length - 1].day}` : 'АРХИВ НЕДОСТУПЕН';
+      if (!window.Chart || !points.length) {
+        canvas.hidden = true; fallback.hidden = false;
+        fallback.textContent = window.Chart ? 'Нет исторических точек для графика.' : 'Chart.js недоступен. Числовые данные сохранены в карточках.';
+        return;
       }
-      renderAllocations(metrics);
-      document.querySelectorAll('.archive-button').forEach((button) => button.setAttribute('aria-current', String(Number(button.dataset.day) === Number(report.day))));
+      canvas.hidden = false; fallback.hidden = true;
+      state.performanceChart = new Chart(canvas, {
+        type: 'line',
+        data: { labels: points.map((item) => `Д ${item.day}`), datasets: [{ label: 'Отслеживаемый портфель ($)', data: points.map((item) => Number(item.metrics.portfolio_value)), borderColor: '#00f3ff', backgroundColor: 'rgba(0,243,255,.13)', pointBackgroundColor: '#030712', pointBorderColor: '#00f3ff', pointRadius: points.length === 1 ? 5 : 3, borderWidth: 2.5, fill: true, tension: points.length > 2 ? .28 : 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, animation: matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 450 }, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { color: '#cbd5e1', font: { family: 'Share Tech Mono' } } }, tooltip: { backgroundColor: 'rgba(9,14,26,.96)', borderColor: 'rgba(0,243,255,.4)', borderWidth: 1, callbacks: { label: (context) => ` ${money.format(context.parsed.y)}` } } }, scales: { x: { grid: { display: false }, ticks: { color: '#64748b' } }, y: { grid: { color: 'rgba(148,163,184,.08)' }, ticks: { color: '#64748b', callback: (value) => compactMoney.format(value) } } } }
+      });
+    }
+
+    function renderAllocationChart(report) {
+      destroyChart('allocationChart');
+      const canvas = $('allocationChart');
+      const fallback = $('allocation-chart-fallback');
+      const legend = $('allocation-legend'); legend.replaceChildren();
+      const allocations = (Array.isArray(report?.metrics?.allocations) ? report.metrics.allocations : []).filter((item) => isFiniteNumber(item.value_usd) && Number(item.value_usd) >= 0);
+      if (!window.Chart || !allocations.length) {
+        canvas.hidden = true; fallback.hidden = false;
+        fallback.textContent = window.Chart ? 'Нет аллокаций для диаграммы.' : 'Chart.js недоступен.';
+        return;
+      }
+      const total = allocations.reduce((sum, item) => sum + Number(item.value_usd), 0);
+      canvas.hidden = false; fallback.hidden = true;
+      allocations.forEach((item, index) => {
+        const entry = node('div', 'legend-item');
+        const swatch = node('span', 'legend-swatch'); swatch.style.background = palette[index % palette.length];
+        const share = total > 0 ? `${decimal.format((Number(item.value_usd) / total) * 100)}%` : 'Недоступно';
+        entry.append(swatch, node('span', '', `${item.symbol || item.label || 'Актив'} · ${share}`)); legend.append(entry);
+      });
+      state.allocationChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: { labels: allocations.map((item) => item.label || item.symbol || 'Актив'), datasets: [{ data: allocations.map((item) => Number(item.value_usd)), backgroundColor: allocations.map((_, index) => palette[index % palette.length]), borderColor: '#030712', borderWidth: 3, hoverOffset: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', animation: matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 450 }, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(9,14,26,.96)', borderColor: 'rgba(0,243,255,.35)', borderWidth: 1, callbacks: { label: (context) => ` ${context.label}: ${money.format(context.raw)}` } } } }
+      });
+    }
+
+    function wrapReportTables() {
+      $('report-content').querySelectorAll('table').forEach((table) => {
+        if (table.parentElement?.classList.contains('report-table-scroll')) return;
+        const wrapper = node('div', 'report-table-scroll');
+        table.parentNode.insertBefore(wrapper, table); wrapper.append(table);
+      });
+    }
+    function renderReportBody(report) {
+      $('report-kicker').textContent = report?.day == null ? 'ОТЧЕТ AI-АГЕНТА' : `ОТЧЕТ AI-АГЕНТА · ДЕНЬ ${report.day} · ${formatDate(report.date)}`;
+      $('report-title').textContent = report?.title || 'Отчет без названия';
+      $('report-balance').textContent = formatMoney(report?.metrics?.portfolio_value);
+      $('report-pnl').textContent = formatPercent(report?.metrics?.pnl_percent, true);
+      const host = $('report-content'); host.replaceChildren();
+      if (!report?.content || typeof report.content !== 'string') { host.append(node('p', 'empty', 'Текст отчета недоступен.')); return; }
+      try {
+        const rendered = marked.parse(report.content, { async: false, gfm: true, breaks: false });
+        host.innerHTML = DOMPurify.sanitize(rendered, { USE_PROFILES: { html: true }, FORBID_TAGS: ['style', 'iframe', 'object', 'embed', 'form'], FORBID_ATTR: ['style'] });
+        wrapReportTables();
+      } catch (error) {
+        host.append(node('p', 'empty', `Не удалось отобразить отчет: ${error.message}`));
+      }
     }
 
     function renderArchive() {
-      const host = $('archive'); host.replaceChildren();
-      reports.forEach((report) => {
-        const button = document.createElement('button');
-        button.type = 'button'; button.dataset.day = report.day;
-        button.className = 'archive-button text-left rounded-xl border border-white/10 px-4 py-3 transition hover:bg-white/5';
-        const title = document.createElement('span'); title.className = 'block text-sm font-medium'; title.textContent = report.title || `Day ${report.day}`;
-        const date = document.createElement('span'); date.className = 'block text-xs text-slate-500 mt-1'; date.textContent = report.date || 'Unknown date';
-        button.append(title, date); button.addEventListener('click', () => renderReport(report)); host.append(button);
+      const host = $('archive-list'); host.replaceChildren();
+      $('archive-count').textContent = `${state.filtered.length} записей`;
+      $('archive-empty').hidden = state.filtered.length !== 0;
+      if (!state.filtered.length) return;
+      state.filtered.forEach((report) => {
+        const button = node('button', 'archive-item');
+        button.type = 'button'; button.dataset.day = String(report.day ?? '');
+        button.setAttribute('aria-current', String(report === state.selected));
+        button.append(node('span', 'archive-item-title', report.title || `День ${report.day ?? '—'}`));
+        const meta = node('span', 'archive-item-meta');
+        meta.append(node('span', '', report.day == null ? 'ДЕНЬ —' : `ДЕНЬ ${report.day}`), node('span', '', formatDate(report.date)));
+        button.append(meta);
+        button.addEventListener('click', () => selectReport(report, true));
+        host.append(button);
       });
+    }
+
+    function selectReport(report, fromArchive = false) {
+      if (!report) return;
+      state.selected = report;
+      renderHero(report); renderMetrics(report); renderReportBody(report); renderHoldings(report); renderFunding(report); renderAllocationChart(report); renderArchive();
+      if (fromArchive) $('report-panel').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    }
+
+    function filterArchive() {
+      const query = $('archive-search').value.trim().toLocaleLowerCase('ru-RU');
+      state.filtered = state.reports.filter((report) => [report.day, report.date, report.title, report.content].some((value) => String(value ?? '').toLocaleLowerCase('ru-RU').includes(query)));
+      renderArchive();
+    }
+
+    function renderError(message) {
+      setStatus(`Данные недоступны · ${message}`, 'error');
+      $('hero-badge').textContent = 'КАНАЛ ДАННЫХ НЕДОСТУПЕН';
+      $('hero-title').textContent = 'Не удалось загрузить канонический архив';
+      $('hero-copy').textContent = 'Проверьте доступность data/reports.json и повторите загрузку страницы.';
+      $('report-title').textContent = 'Аналитика недоступна';
+      $('report-content').replaceChildren(node('p', 'empty', `Ошибка загрузки: ${message}`));
+      $('archive-list').replaceChildren(); $('archive-empty').hidden = false;
+      $('performance-chart-fallback').textContent = 'История недоступна.';
+      $('allocation-chart-fallback').textContent = 'Аллокации недоступны.';
     }
 
     async function loadReports() {
@@ -162,32 +520,59 @@
         const response = await fetch('./data/reports.json?v=' + Date.now());
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const documentData = await response.json();
-        if (!Array.isArray(documentData.reports) || !documentData.reports.length) throw new Error('No reports are available');
-        reports = [...documentData.reports].sort((a, b) => Number(b.day) - Number(a.day));
-        renderArchive(); renderReport(reports[0]); setStatus(`Online · ${reports.length} report${reports.length === 1 ? '' : 's'}`, true);
-      } catch (error) {
-        setStatus(`Data unavailable · ${error.message}`);
-        $('report-title').textContent = 'Analysis stream unavailable';
-        $('report-content').textContent = 'Copy data into public/data and serve the public directory over HTTP. See README.md for the local workflow.';
-      }
+        if (!Array.isArray(documentData.reports) || documentData.reports.length === 0) throw new Error('архив пуст');
+        state.initialCapital = isFiniteNumber(documentData.initial_capital_usd) ? Number(documentData.initial_capital_usd) : null;
+        state.reports = documentData.reports.filter((item) => item && typeof item === 'object').sort((a, b) => Number(b.day ?? -Infinity) - Number(a.day ?? -Infinity));
+        if (!state.reports.length) throw new Error('нет корректных отчетов');
+        state.filtered = [...state.reports]; state.selected = state.reports[0];
+        renderHero(state.reports[0]); renderPerformanceChart(); selectReport(state.reports[0]);
+        setStatus(`ОНЛАЙН · ${state.reports.length} ОТЧЕТОВ · ${formatDate(state.reports[0].date).toLocaleUpperCase('ru-RU')}`, 'online');
+      } catch (error) { renderError(error.message); }
     }
 
     function startScene() {
       if (!window.THREE || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      const canvas = $('scene'); const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-      renderer.setPixelRatio(Math.min(devicePixelRatio, 1.8));
-      const scene = new THREE.Scene(); const camera = new THREE.PerspectiveCamera(58, innerWidth / innerHeight, .1, 100); camera.position.z = 8;
-      const geometry = new THREE.BufferGeometry(); const count = 900; const points = new Float32Array(count * 3);
-      for (let i = 0; i < points.length; i += 3) { points[i] = (Math.random() - .5) * 18; points[i + 1] = (Math.random() - .5) * 12; points[i + 2] = (Math.random() - .5) * 12; }
-      geometry.setAttribute('position', new THREE.BufferAttribute(points, 3));
-      const particles = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0x5ee7ff, size: .025, transparent: true, opacity: .72 })); scene.add(particles);
-      const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(2.25, 2), new THREE.MeshBasicMaterial({ color: 0x8b5cf6, wireframe: true, transparent: true, opacity: .1 })); orb.position.set(3.4, .5, -1.5); scene.add(orb);
-      function resize() { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight, false); }
-      addEventListener('resize', resize, { passive: true }); resize();
-      function animate(time) { particles.rotation.y = time * .000025; particles.rotation.x = Math.sin(time * .0001) * .05; orb.rotation.x = time * .00008; orb.rotation.y = time * .00012; renderer.render(scene, camera); requestAnimationFrame(animate); }
-      requestAnimationFrame(animate);
+      const host = $('webgl-bg');
+      try {
+        const scene = new THREE.Scene(); scene.fog = new THREE.FogExp2(0x030712, .023);
+        const camera = new THREE.PerspectiveCamera(64, innerWidth / innerHeight, .1, 1000); camera.position.z = 28;
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' });
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7)); host.append(renderer.domElement);
+        const group = new THREE.Group(); scene.add(group);
+        const knot = new THREE.Mesh(new THREE.TorusKnotGeometry(8.5, 2.3, 110, 16), new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true, transparent: true, opacity: .105 })); group.add(knot);
+        const cage = new THREE.Mesh(new THREE.IcosahedronGeometry(5.8, 1), new THREE.MeshBasicMaterial({ color: 0xa855f7, wireframe: true, transparent: true, opacity: .14 })); group.add(cage);
+        const count = innerWidth < 700 ? 650 : 1300;
+        const geometry = new THREE.BufferGeometry(); const positions = new Float32Array(count * 3);
+        for (let index = 0; index < positions.length; index += 3) { positions[index] = (Math.random() - .5) * 80; positions[index + 1] = (Math.random() - .5) * 65; positions[index + 2] = (Math.random() - .5) * 70; }
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particles = new THREE.Points(geometry, new THREE.PointsMaterial({ size: .1, color: 0x00f3ff, transparent: true, opacity: .42, blending: THREE.AdditiveBlending })); scene.add(particles);
+        let frame = 0; let visible = !document.hidden; let pointerX = 0; let pointerY = 0;
+        function resize() { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight, false); }
+        function animate(time) {
+          frame = 0;
+          if (!visible) return;
+          knot.rotation.x = time * .00007; knot.rotation.y = time * .0001;
+          cage.rotation.x = -time * .00008; cage.rotation.z = time * .00011; particles.rotation.y = time * .000014;
+          group.rotation.y += (pointerX - group.rotation.y) * .035; group.rotation.x += (pointerY - group.rotation.x) * .035;
+          renderer.render(scene, camera); frame = requestAnimationFrame(animate);
+        }
+        addEventListener('resize', resize, { passive: true });
+        addEventListener('pointermove', (event) => { pointerX = ((event.clientX / innerWidth) - .5) * .3; pointerY = ((event.clientY / innerHeight) - .5) * .2; }, { passive: true });
+        document.addEventListener('visibilitychange', () => { visible = !document.hidden; if (visible && !frame) frame = requestAnimationFrame(animate); if (!visible && frame) { cancelAnimationFrame(frame); frame = 0; } });
+        resize(); frame = requestAnimationFrame(animate);
+      } catch (error) { host.hidden = true; }
     }
 
+    $('nav-btn-dashboard').addEventListener('click', () => switchView('dashboard'));
+    $('nav-btn-analytics').addEventListener('click', () => switchView('analytics'));
+    $('hero-cta').addEventListener('click', () => switchView('analytics', true));
+    $('back-dashboard').addEventListener('click', () => switchView('dashboard'));
+    $('archive-search').addEventListener('input', filterArchive);
+    document.addEventListener('visibilitychange', () => {
+      const paused = document.hidden;
+      if (state.performanceChart) { state.performanceChart.options.animation = false; paused ? state.performanceChart.stop() : state.performanceChart.resize(); }
+      if (state.allocationChart) { state.allocationChart.options.animation = false; paused ? state.allocationChart.stop() : state.allocationChart.resize(); }
+    });
     startScene(); loadReports();
   </script>
 </body>

@@ -9,7 +9,7 @@ from typing import Any
 import requests
 
 SPOT_URL = "https://data-api.binance.vision/api/v3/ticker/24hr"
-FUTURES_URL = "https://fapi.binance.com/fapi/v1/premiumIndex"
+FUTURES_URL = "https://www.binance.com/fapi/v1/premiumIndex"
 FNG_URL = "https://api.alternative.me/fng/"
 SYMBOLS = (
     "BTCUSDT",

@@ -36,7 +36,11 @@ def snapshot():
 
 def valid_report(snapshot_value, state):
     trigger_lines = "\n".join(
-        f"- `{order['id']}`: not touched; range comparison does not prove execution."
+        f"- `{order['id']}`: {order['symbol']} high "
+        f"{snapshot_value['markets'][order['symbol']]['high_24h']}, low "
+        f"{snapshot_value['markets'][order['symbol']]['low_24h']}, last "
+        f"{snapshot_value['markets'][order['symbol']]['last']}; not touched; "
+        "range comparison does not prove execution."
         for order in state["orders"]
     )
     funding_lines = "\n".join(

@@ -42,7 +42,7 @@ Return concise Markdown with exactly these five H2 headings, verbatim and in ord
 ## 4. 8-asset comparative summary table
 ## 5. Practical trading triggers for 1 BTC + $20k USDT model balance
 
-Section 1: begin with this exact legend line: `Touched means the trigger lies inside the supplied 24h high/low range; not touched means it lies outside; indeterminate means the current high, low, or last is insufficient. A touch does not prove execution.` Then compare every prior state order/trigger with each symbol's current high_24h, low_24h, and last. Label each item touched, not touched, or indeterminate, mention every supplied order id, and discuss explicit triggers in the previous report when present. A range crossing is not proof of execution.
+Section 1: begin with this exact legend line: `Touched means the trigger lies inside the supplied 24h high/low range; not touched means it lies outside; indeterminate means the current high, low, or last is insufficient. A touch does not prove execution.` Then compare every prior state order/trigger with each symbol's current high_24h, low_24h, and last. For every symbol referenced by an order, explicitly copy all three exact current high_24h, low_24h, and last values. Label each item touched, not touched, or indeterminate, mention every supplied order id, and discuss explicit triggers in the previous report when present. A range crossing is not proof of execution.
 
 Section 2: give one bullet for every available funding value in exactly this form: `- BTCUSDT lastFundingRate: 0.00001` (substitute the exact supplied raw symbol/value). If liquidation data is absent, include `Liquidation data: unavailable (not provided in supplied data).`
 
@@ -243,6 +243,14 @@ def _require_matching_number(actual: Any, expected: Any, label: str) -> None:
         raise PipelineError(f"{label} does not match the supplied snapshot value")
 
 
+def _numbers_in_text(content: str) -> set[Decimal]:
+    values: set[Decimal] = set()
+    pattern = r"(?<![A-Za-z0-9.])\$?[-+]?(?:\d[\d,]*\.?\d*|\.\d+)(?:[eE][-+]?\d+)?"
+    for match in re.finditer(pattern, content):
+        values.add(_decimal(match.group(0), "report number"))
+    return values
+
+
 def _extract_sections(content: str) -> dict[str, str]:
     if re.search(r"(?m)^```", content):
         raise PipelineError("AI report must be renderable Markdown, not a fenced code block")
@@ -371,11 +379,29 @@ def validate_report_markdown(
     if not re.search(r"(?i)(?:not|does not) (?:prove|mean|claim).{0,20}execution", retrospective):
         raise PipelineError("Section 1 must not represent a range touch as execution")
     orders = state.get("orders")
+    referenced_symbols: set[str] = set()
     if isinstance(orders, list):
         for order in orders:
             if isinstance(order, dict) and isinstance(order.get("id"), str):
                 if order["id"] not in retrospective:
                     raise PipelineError(f"Section 1 must assess prior trigger {order['id']}")
+                symbol = order.get("symbol")
+                if isinstance(symbol, str):
+                    referenced_symbols.add(symbol)
+    markets = snapshot.get("markets")
+    if not isinstance(markets, dict):
+        raise PipelineError("Cannot validate retrospective values without snapshot markets")
+    retrospective_numbers = _numbers_in_text(retrospective)
+    for symbol in referenced_symbols:
+        market = markets.get(symbol)
+        if not isinstance(market, dict):
+            raise PipelineError(f"Snapshot is missing {symbol} for retrospective validation")
+        for field in ("high_24h", "low_24h", "last"):
+            expected = market.get(field)
+            if _decimal(expected, f"{symbol} {field}") not in retrospective_numbers:
+                raise PipelineError(
+                    f"Section 1 must cite exact current {symbol} {field} value"
+                )
 
     _validate_funding(sections[SECTION_HEADINGS[1]], snapshot)
     _validate_sentiment(sections[SECTION_HEADINGS[2]], current_metrics)

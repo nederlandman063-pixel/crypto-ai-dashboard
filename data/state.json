@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24T21:30:11.301913+00:00",
+  "updated_at": "2026-10-25T14:07:11.091774+00:00",
   "orders": [
     {
       "id": "btc-limit-buy-84280",
@@ -74,9 +74,9 @@
     }
   ],
   "execution": {
-    "last_success_at": "2026-10-24T21:30:11.301913+00:00",
-    "last_report_day": 38,
-    "last_snapshot_at": "2026-10-24T21:29:56.963702+00:00",
+    "last_success_at": "2026-10-25T14:07:11.091774+00:00",
+    "last_report_day": 39,
+    "last_snapshot_at": "2026-10-25T14:06:29.795768+00:00",
     "model": "gemini-2.5-flash",
     "orders_executed_by_pipeline": false
   }

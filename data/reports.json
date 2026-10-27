@@ -3,6 +3,133 @@
   "initial_capital_usd": 99960.0,
   "reports": [
     {
+      "day": 41,
+      "date": "2026-10-27",
+      "title": "Day 41 Quantitative Crypto Brief",
+      "content": "## 1. Retrospective check against Day N-1 triggers\nTouched means the trigger lies inside the supplied 24h high/low range; not touched means it lies outside; indeterminate means the current high, low, or last is insufficient. A touch does not prove execution.\n- Order ID: btc-limit-buy-84280 (BTCUSDT limit buy at $84280.0): The 24h high for BTCUSDT is 80780.2, low_24h is 79506.0, and last is 80591.88. The trigger price of $84280.0 is not touched (above 24h high).\n- Order ID: sol-tp-11740 (SOLUSDT take profit at $117.4): The 24h high for SOLUSDT is 102.39, low_24h is 99.16, and last is 101.06. The trigger price of $117.4 is not touched (above 24h high).\n- Order ID: sol-stop-11220 (SOLUSDT breakeven stop at $112.2): The 24h high for SOLUSDT is 102.39, low_24h is 99.16, and last is 101.06. The trigger price of $112.2 is not touched (above 24h high).\n- Order ID: link-tp-1590 (LINKUSDT take profit at $15.9): The 24h high for LINKUSDT is 11.593, low_24h is 11.228, and last is 11.474. The trigger price of $15.9 is not touched (above 24h high).\n- Order ID: link-stop-1520 (LINKUSDT guaranteed stop at $15.2): The 24h high for LINKUSDT is 11.593, low_24h is 11.228, and last is 11.474. The trigger price of $15.2 is not touched (above 24h high).\n\n## 2. Derivatives / Funding / Liquidations\n- ADAUSDT lastFundingRate: 0.0001\n- BNBUSDT lastFundingRate: 5.435e-05\n- BTCUSDT lastFundingRate: 0.0001\n- DOGEUSDT lastFundingRate: 5.719e-05\n- ETHUSDT lastFundingRate: 7.315e-05\n- LINKUSDT lastFundingRate: 0.0001\n- SOLUSDT lastFundingRate: 7.28e-05\n- XRPUSDT lastFundingRate: 0.0001\nLiquidation data: unavailable (not provided in supplied data).\n\n## 3. Macro / Onchain sentiment\nFear & Greed: 48\nBTC dominance: 58.8%\nAdditional macro data: unavailable (not provided in supplied data).\nOnchain data: unavailable (not provided in supplied data).\n\n## 4. 8-asset comparative summary table\n| Symbol | High 24h | Low 24h | Last | 24h Change % | Volume 24h |\n|---|---|---|---|---|---|\n| BTC | 80780.2 | 79506.0 | 80591.88 | -0.161 | 12677.38778 |\n| ETH | 2355.48 | 2297.44 | 2348.94 | 0.437 | 162376.8591 |\n| SOL | 102.39 | 99.16 | 101.06 | -1.202 | 1528330.057 |\n| BNB | 754.29 | 734.09 | 749.65 | 0.567 | 105896.986 |\n| XRP | 1.3292 | 1.2853 | 1.3227 | 1.543 | 69026635.8 |\n| ADA | 0.2077 | 0.2013 | 0.2058 | -0.867 | 50802376.4 |\n| DOGE | 0.0784 | 0.07666 | 0.07826 | 0.32 | 251161215.0 |\n| LINK | 11.593 | 11.228 | 11.474 | -0.984 | 1381019.05 |\n\n## 5. Practical trading triggers for 1 BTC + $20k USDT model balance\nModel balance (separate from tracked portfolio): 1 BTC + $20,000 USDT.\n- If BTCUSDT drops below $78912.195 (approximately 0.75% below its current 24h low of 79506.0), consider deploying $5,000 USDT to buy more BTC. This strategy attempts to accumulate at deeper dips but carries risk if downward momentum accelerates.\n- If BTCUSDT rises above $81385.0805 (approximately 0.75% above its current 24h high of 80780.2), consider selling 0.2 BTC to realize profit and increase USDT liquidity. This move aims to secure gains in a breakout scenario, though it risks missing further upside.\nNo trades are executed by this report.",
+      "metrics": {
+        "portfolio_value": 99789.68,
+        "pnl_usd": -170.32,
+        "pnl_percent": -0.17,
+        "cash_reserve_usd": 28043.29,
+        "reserved_for_limits_usd": 10000.0,
+        "cash_ratio": 28.1,
+        "fear_greed": 48,
+        "btc_dominance": 58.8,
+        "allocations": [
+          {
+            "symbol": "BTC",
+            "label": "Bitcoin",
+            "quantity": 0.5,
+            "value_usd": 40295.94,
+            "price_usd": 80591.88
+          },
+          {
+            "symbol": "USDT",
+            "label": "Cash + Limits",
+            "quantity": 28043.29,
+            "value_usd": 28043.29
+          },
+          {
+            "symbol": "ETH",
+            "label": "Ethereum",
+            "quantity": 5.5866,
+            "value_usd": 13122.59,
+            "price_usd": 2348.94
+          },
+          {
+            "symbol": "LINK",
+            "label": "Chainlink",
+            "quantity": 333.33,
+            "value_usd": 3824.63,
+            "price_usd": 11.474
+          },
+          {
+            "symbol": "SOL",
+            "label": "Solana",
+            "quantity": 44.56,
+            "value_usd": 4503.23,
+            "price_usd": 101.06
+          }
+        ]
+      },
+      "market_snapshot": {
+        "as_of": "2026-10-27T15:44:05.790264+00:00",
+        "markets": {
+          "BTCUSDT": {
+            "high_24h": 80780.2,
+            "low_24h": 79506.0,
+            "last": 80591.88,
+            "volume_24h": 12677.38778,
+            "percent_change_24h": -0.161,
+            "last_funding_rate": 0.0001
+          },
+          "ETHUSDT": {
+            "high_24h": 2355.48,
+            "low_24h": 2297.44,
+            "last": 2348.94,
+            "volume_24h": 162376.8591,
+            "percent_change_24h": 0.437,
+            "last_funding_rate": 7.315e-05
+          },
+          "SOLUSDT": {
+            "high_24h": 102.39,
+            "low_24h": 99.16,
+            "last": 101.06,
+            "volume_24h": 1528330.057,
+            "percent_change_24h": -1.202,
+            "last_funding_rate": 7.28e-05
+          },
+          "BNBUSDT": {
+            "high_24h": 754.29,
+            "low_24h": 734.09,
+            "last": 749.65,
+            "volume_24h": 105896.986,
+            "percent_change_24h": 0.567,
+            "last_funding_rate": 5.435e-05
+          },
+          "XRPUSDT": {
+            "high_24h": 1.3292,
+            "low_24h": 1.2853,
+            "last": 1.3227,
+            "volume_24h": 69026635.8,
+            "percent_change_24h": 1.543,
+            "last_funding_rate": 0.0001
+          },
+          "ADAUSDT": {
+            "high_24h": 0.2077,
+            "low_24h": 0.2013,
+            "last": 0.2058,
+            "volume_24h": 50802376.4,
+            "percent_change_24h": -0.867,
+            "last_funding_rate": 0.0001
+          },
+          "DOGEUSDT": {
+            "high_24h": 0.0784,
+            "low_24h": 0.07666,
+            "last": 0.07826,
+            "volume_24h": 251161215.0,
+            "percent_change_24h": 0.32,
+            "last_funding_rate": 5.719e-05
+          },
+          "LINKUSDT": {
+            "high_24h": 11.593,
+            "low_24h": 11.228,
+            "last": 11.474,
+            "volume_24h": 1381019.05,
+            "percent_change_24h": -0.984,
+            "last_funding_rate": 0.0001
+          }
+        },
+        "fear_greed": 48,
+        "sources": {
+          "spot": "https://data-api.binance.vision/api/v3/ticker/24hr",
+          "funding": "https://www.binance.com/fapi/v1/premiumIndex",
+          "fear_greed": "https://api.alternative.me/fng/"
+        }
+      }
+    },
+    {
       "day": 40,
       "date": "2026-10-26",
       "title": "Day 40 Quantitative Crypto Brief",

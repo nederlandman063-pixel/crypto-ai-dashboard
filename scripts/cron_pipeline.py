@@ -23,36 +23,45 @@ MODEL = "gemini-2.5-flash"
 MAX_REPORT_ATTEMPTS = 3
 ASSET_SYMBOLS = ("BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "LINK")
 SECTION_HEADINGS = (
-    "## 1. Retrospective check against Day N-1 triggers",
-    "## 2. Derivatives / Funding / Liquidations",
-    "## 3. Macro / Onchain sentiment",
-    "## 4. 8-asset comparative summary table",
-    "## 5. Practical trading triggers for 1 BTC + $20k USDT model balance",
+    "## 1. Проверка триггеров за День N-1",
+    "## 2. Деривативы / Фандинг / Ликвидации",
+    "## 3. Макроэкономика / Ончейн-настроения",
+    "## 4. Сводная таблица по 8 активам",
+    "## 5. Практические торговые триггеры для модельного баланса 1 BTC + $20k USDT",
 )
-TABLE_COLUMNS = ("Symbol", "High 24h", "Low 24h", "Last", "24h Change %", "Volume 24h")
+TABLE_COLUMNS = (
+    "Символ",
+    "Максимум 24ч",
+    "Минимум 24ч",
+    "Последняя цена",
+    "Изменение 24ч, %",
+    "Объём 24ч",
+)
 MODEL_BALANCE_LINE = (
-    "Model balance (separate from tracked portfolio): 1 BTC + $20,000 USDT."
+    "Модельный баланс (отдельно от отслеживаемого портфеля): 1 BTC + $20,000 USDT."
 )
-SYSTEM_INSTRUCTION = """You are a quantitative crypto portfolio analyst. Use only the supplied JSON. Never invent prices, funding, liquidations, macro/onchain metrics, news, executions, or fills.
+SYSTEM_INSTRUCTION = """Вы — количественный аналитик криптовалютного портфеля. Используйте только предоставленный JSON. Не придумывайте цены, ставки фандинга, ликвидации, макроэкономические или ончейн-метрики, новости, исполнения и факты заполнения ордеров.
 
-Return concise Markdown with exactly these five H2 headings, verbatim and in order, and no other H1 or H2 headings:
-## 1. Retrospective check against Day N-1 triggers
-## 2. Derivatives / Funding / Liquidations
-## 3. Macro / Onchain sentiment
-## 4. 8-asset comparative summary table
-## 5. Practical trading triggers for 1 BTC + $20k USDT model balance
+Весь аналитический текст должен быть написан на русском языке. Английский допустим только для тикеров, идентификаторов ордеров, имён полей API и общепринятых технических обозначений. Если предыдущий отчёт написан на английском, изложите относящиеся к нему выводы по-русски.
 
-Section 1: begin with this exact legend line: `Touched means the trigger lies inside the supplied 24h high/low range; not touched means it lies outside; indeterminate means the current high, low, or last is insufficient. A touch does not prove execution.` Then compare every prior state order/trigger with each symbol's current high_24h, low_24h, and last. For every symbol referenced by an order, explicitly copy all three exact current high_24h, low_24h, and last values. Label each item touched, not touched, or indeterminate, mention every supplied order id, and discuss explicit triggers in the previous report when present. A range crossing is not proof of execution.
+Верните краткий Markdown ровно с пятью следующими заголовками H2, дословно и в указанном порядке. Не добавляйте другие заголовки H1 или H2:
+## 1. Проверка триггеров за День N-1
+## 2. Деривативы / Фандинг / Ликвидации
+## 3. Макроэкономика / Ончейн-настроения
+## 4. Сводная таблица по 8 активам
+## 5. Практические торговые триггеры для модельного баланса 1 BTC + $20k USDT
 
-Section 2: give one bullet for every available funding value in exactly this form: `- BTCUSDT lastFundingRate: 0.00001` (substitute the exact supplied raw symbol/value). If liquidation data is absent, include `Liquidation data: unavailable (not provided in supplied data).`
+Раздел 1: начните с точной строки: `Достигнут означает, что уровень триггера находится внутри предоставленного диапазона максимум/минимум за 24 часа; не достигнут означает, что он находится вне диапазона; неопределённо означает, что текущих значений максимума, минимума или последней цены недостаточно. Касание не доказывает исполнение.` Затем сравните каждый предыдущий ордер или триггер из state с текущими high_24h, low_24h и last соответствующего символа. Для каждого символа, упомянутого в ордерах, явно скопируйте все три точных значения high_24h, low_24h и last. Пометьте каждый пункт как «достигнут», «не достигнут» или «неопределённо», упомяните каждый предоставленный id ордера и разберите явные триггеры предыдущего отчёта, если они есть. Попадание уровня в диапазон не доказывает исполнение.
 
-Section 3: cite only supplied sentiment fields. Use lines `Fear & Greed: <exact value>` and `BTC dominance: <exact value>%` when available. Because this input currently supplies no other macro or onchain series, include `Additional macro data: unavailable (not provided in supplied data).` and `Onchain data: unavailable (not provided in supplied data).`
+Раздел 2: для каждого доступного значения фандинга приведите один пункт строго в формате `- BTCUSDT ставка фандинга (lastFundingRate): 0.00001`, подставив точные исходные символ и значение. Если данных о ликвидациях нет, добавьте точную строку `Данные о ликвидациях: недоступны (не предоставлены во входных данных).`
 
-Section 4: include one Markdown table and no asset bullets. Use exactly this header: `| Symbol | High 24h | Low 24h | Last | 24h Change % | Volume 24h |`. Copy raw snapshot values exactly. Include exactly these rows in this order: BTC, ETH, SOL, BNB, XRP, ADA, DOGE, LINK.
+Раздел 3: ссылайтесь только на предоставленные поля настроений. При наличии используйте строки `Индекс страха и жадности: <точное значение>` и `Доминирование BTC: <точное значение>%`. Поскольку входные данные сейчас не содержат других макроэкономических или ончейн-серий, добавьте точные строки `Дополнительные макроданные: недоступны (не предоставлены во входных данных).` и `Ончейн-данные: недоступны (не предоставлены во входных данных).`
 
-Section 5: begin with `Model balance (separate from tracked portfolio): 1 BTC + $20,000 USDT.` Give at least two practical conditional price triggers beginning with `- If`, with explicit sizing for this separate model balance. Do not confuse it with current_revalued_metrics, portfolio_and_order_state, or execute/simulate trades. End with `No trades are executed by this report.`
+Раздел 4: включите одну Markdown-таблицу и не используйте списки активов. Используйте точный заголовок: `| Символ | Максимум 24ч | Минимум 24ч | Последняя цена | Изменение 24ч, % | Объём 24ч |`. Точно скопируйте исходные значения снимка. Добавьте ровно следующие строки в этом порядке: BTC, ETH, SOL, BNB, XRP, ADA, DOGE, LINK.
 
-Discuss uncertainty and risk without introducing unsupplied facts."""
+Раздел 5: начните с точной строки `Модельный баланс (отдельно от отслеживаемого портфеля): 1 BTC + $20,000 USDT.` Дайте не менее двух практических условных ценовых триггеров, начинающихся с `- Если`, и укажите точный размер позиции для этого отдельного модельного баланса. Не смешивайте его с current_revalued_metrics или portfolio_and_order_state и не исполняйте и не симулируйте сделки. Завершите точной строкой `Этот отчёт не исполняет сделки.`
+
+Обсудите неопределённость и риски, не добавляя фактов, которых нет во входных данных."""
 
 
 class PipelineError(RuntimeError):
@@ -185,9 +194,10 @@ def build_prompt(
         "portfolio_and_order_state": state,
     }
     return (
-        "Produce today's complete report from this JSON input. Follow every formatting "
-        "and factual constraint in the system instruction. Copy numeric snapshot values "
-        "without rounding, and distinguish a trigger range touch from an execution.\n\n"
+        "Подготовьте полный сегодняшний отчёт на русском языке по этим входным данным JSON. "
+        "Соблюдайте все требования к формату и фактам из системной инструкции. Копируйте "
+        "числовые значения снимка без округления и отличайте касание уровня в диапазоне "
+        "от факта исполнения.\n\n"
         + json.dumps(payload, indent=2, sort_keys=True)
     )
 
@@ -266,6 +276,22 @@ def _extract_sections(content: str) -> dict[str, str]:
     }
 
 
+def _validate_russian_language(content: str) -> None:
+    cyrillic_count = len(re.findall(r"[А-Яа-яЁё]", content))
+    latin_count = len(re.findall(r"[A-Za-z]", content))
+    if cyrillic_count < 150 or cyrillic_count <= latin_count:
+        raise PipelineError("AI report must be written predominantly in Russian")
+
+    for line in content.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("|"):
+            continue
+        if re.search(
+            r"\b[A-Za-z]{2,}\b(?:\s+\b[A-Za-z]{2,}\b){2,}", stripped
+        ):
+            raise PipelineError("AI report contains an English-language prose line")
+
+
 def _validate_comparative_table(section: str, snapshot: dict[str, Any]) -> None:
     lines = section.splitlines()
     table_start: int | None = None
@@ -318,7 +344,8 @@ def _validate_funding(section: str, snapshot: dict[str, Any]) -> None:
     if not isinstance(markets, dict):
         raise PipelineError("Cannot validate funding references without snapshot markets")
     pattern = re.compile(
-        r"(?im)^\s*[-*]\s*([A-Z]+USDT)\s+lastFundingRate:\s*`?([-+0-9.eE]+)`?\s*$"
+        r"(?im)^\s*[-*]\s*([A-Z]+USDT)\s+ставка фандинга "
+        r"\(lastFundingRate\):\s*`?([-+0-9.eE]+)`?\s*$"
     )
     references = pattern.findall(section)
     actual = {symbol: value for symbol, value in references}
@@ -332,32 +359,34 @@ def _validate_funding(section: str, snapshot: dict[str, Any]) -> None:
         raise PipelineError("Section 2 must cite every available lastFundingRate exactly once")
     for symbol, expected_value in expected.items():
         _require_matching_number(actual[symbol], expected_value, f"{symbol} lastFundingRate")
-    if not re.search(r"(?i)Liquidation data:\s*(?:unavailable|not provided)", section):
+    if not re.search(r"(?i)Данные о ликвидациях:\s*недоступны", section):
         raise PipelineError("Section 2 must explicitly state that liquidation data is unavailable")
 
 
 def _validate_sentiment(section: str, current_metrics: dict[str, Any]) -> None:
     fear_greed = current_metrics.get("fear_greed")
-    fear_match = re.search(r"(?im)^Fear\s*&\s*Greed:\s*([-+0-9.eE]+)\s*$", section)
+    fear_match = re.search(
+        r"(?im)^Индекс страха и жадности:\s*([-+0-9.eE]+)\s*$", section
+    )
     if fear_match is None:
         raise PipelineError("Section 3 must cite the supplied Fear & Greed value")
     _require_matching_number(fear_match.group(1), fear_greed, "Fear & Greed")
 
     dominance = current_metrics.get("btc_dominance")
     dominance_match = re.search(
-        r"(?im)^BTC dominance:\s*([-+0-9.eE]+)%?\s*$", section
+        r"(?im)^Доминирование BTC:\s*([-+0-9.eE]+)%?\s*$", section
     )
     if dominance is None:
-        if not re.search(r"(?i)BTC dominance:\s*(?:unavailable|not provided)", section):
+        if not re.search(r"(?i)Доминирование BTC:\s*недоступно", section):
             raise PipelineError("Section 3 must identify unavailable BTC dominance")
     elif dominance_match is None:
         raise PipelineError("Section 3 must cite the supplied BTC dominance value")
     else:
         _require_matching_number(dominance_match.group(1), dominance, "BTC dominance")
 
-    if not re.search(r"(?i)Additional macro data:\s*(?:unavailable|not provided)", section):
+    if not re.search(r"(?i)Дополнительные макроданные:\s*недоступны", section):
         raise PipelineError("Section 3 must identify unavailable additional macro data")
-    if not re.search(r"(?i)Onchain data:\s*(?:unavailable|not provided)", section):
+    if not re.search(r"(?i)Ончейн-данные:\s*недоступны", section):
         raise PipelineError("Section 3 must identify unavailable onchain data")
 
 
@@ -369,14 +398,19 @@ def validate_report_markdown(
     state: dict[str, Any],
 ) -> None:
     sections = _extract_sections(content)
+    _validate_russian_language(content)
     retrospective = sections[SECTION_HEADINGS[0]]
-    for definition in (r"Touched means\b", r"Not touched means\b", r"Indeterminate means\b"):
+    for definition in (
+        r"Достигнут означает\b",
+        r"не достигнут означает\b",
+        r"неопределённо означает\b",
+    ):
         if not re.search(definition, retrospective, re.IGNORECASE):
             raise PipelineError("Section 1 must define touched, not touched, and indeterminate")
-    for field in ("high", "low", "last"):
+    for field in ("максимум", "минимум", "последняя цена"):
         if not re.search(rf"\b{field}\b", retrospective, re.IGNORECASE):
             raise PipelineError(f"Section 1 must compare current {field} data")
-    if not re.search(r"(?i)(?:not|does not) (?:prove|mean|claim).{0,20}execution", retrospective):
+    if not re.search(r"(?i)(?:не доказывает|не означает).{0,30}исполнени", retrospective):
         raise PipelineError("Section 1 must not represent a range touch as execution")
     orders = state.get("orders")
     referenced_symbols: set[str] = set()
@@ -410,7 +444,7 @@ def validate_report_markdown(
     practical = sections[SECTION_HEADINGS[4]]
     if MODEL_BALANCE_LINE not in practical:
         raise PipelineError("Section 5 must identify the separate 1 BTC + $20,000 USDT model balance")
-    trigger_lines = re.findall(r"(?im)^\s*[-*]\s+If\b.*$", practical)
+    trigger_lines = re.findall(r"(?im)^\s*[-*]\s+Если\b.*$", practical)
     if len(trigger_lines) < 2:
         raise PipelineError("Section 5 must provide at least two conditional '- If' triggers with sizing")
     for trigger in trigger_lines:
@@ -418,7 +452,7 @@ def validate_report_markdown(
             r"\b(?:BTC|USDT)\b", trigger
         ):
             raise PipelineError("Every Section 5 trigger must include a price and explicit BTC/USDT sizing")
-    if "No trades are executed by this report." not in practical:
+    if "Этот отчёт не исполняет сделки." not in practical:
         raise PipelineError("Section 5 must state that the report executes no trades")
 
 
@@ -453,10 +487,12 @@ def generate_validated_report(
                 last_error = exc
         if attempt < max_attempts:
             attempt_prompt = (
-                "Repair your previous response by rewriting the entire report. It failed "
-                f"deterministic validation: {last_error}. Return only corrected Markdown.\n\n"
-                f"PREVIOUS INVALID RESPONSE:\n{content if isinstance(content, str) else ''}\n\n"
-                f"ORIGINAL INPUT:\n{prompt}"
+                "Исправьте предыдущий ответ, полностью переписав отчёт на русском языке. "
+                f"Он не прошёл детерминированную проверку: {last_error}. Верните только "
+                "исправленный Markdown.\n\n"
+                f"ПРЕДЫДУЩИЙ НЕКОРРЕКТНЫЙ ОТВЕТ:\n"
+                f"{content if isinstance(content, str) else ''}\n\n"
+                f"ИСХОДНЫЕ ВХОДНЫЕ ДАННЫЕ:\n{prompt}"
             )
     raise PipelineError(
         f"AI report failed structural validation after {max_attempts} attempts: {last_error}"
@@ -504,7 +540,7 @@ def run_pipeline(
     report = {
         "day": day,
         "date": timestamp.date().isoformat(),
-        "title": f"Day {day} Quantitative Crypto Brief",
+        "title": f"День {day}: количественный обзор крипторынка",
         "content": content,
         "metrics": metrics,
         "market_snapshot": snapshot,

@@ -36,19 +36,20 @@ def snapshot():
 
 def valid_report(snapshot_value, state):
     trigger_lines = "\n".join(
-        f"- `{order['id']}`: {order['symbol']} high "
-        f"{snapshot_value['markets'][order['symbol']]['high_24h']}, low "
-        f"{snapshot_value['markets'][order['symbol']]['low_24h']}, last "
-        f"{snapshot_value['markets'][order['symbol']]['last']}; not touched; "
-        "range comparison does not prove execution."
+        f"- `{order['id']}`: {order['symbol']}, максимум "
+        f"{snapshot_value['markets'][order['symbol']]['high_24h']}, минимум "
+        f"{snapshot_value['markets'][order['symbol']]['low_24h']}, последняя цена "
+        f"{snapshot_value['markets'][order['symbol']]['last']}; не достигнут; "
+        "сравнение с диапазоном не доказывает исполнение."
         for order in state["orders"]
     )
     funding_lines = "\n".join(
-        f"- {symbol}USDT lastFundingRate: {snapshot_value['markets'][f'{symbol}USDT']['last_funding_rate']}"
+        f"- {symbol}USDT ставка фандинга (lastFundingRate): "
+        f"{snapshot_value['markets'][f'{symbol}USDT']['last_funding_rate']}"
         for symbol in cron_pipeline.ASSET_SYMBOLS
     )
     table_lines = [
-        "| Symbol | High 24h | Low 24h | Last | 24h Change % | Volume 24h |",
+        "| Символ | Максимум 24ч | Минимум 24ч | Последняя цена | Изменение 24ч, % | Объём 24ч |",
         "|---|---:|---:|---:|---:|---:|",
     ]
     for symbol in cron_pipeline.ASSET_SYMBOLS:
@@ -57,28 +58,28 @@ def valid_report(snapshot_value, state):
             f"| {symbol} | {market['high_24h']} | {market['low_24h']} | "
             f"{market['last']} | {market['percent_change_24h']} | {market['volume_24h']} |"
         )
-    return f"""## 1. Retrospective check against Day N-1 triggers
-Touched means the trigger lies inside the supplied 24h high/low range; not touched means it lies outside; indeterminate means the current high, low, or last is insufficient. A touch does not prove execution.
+    return f"""## 1. Проверка триггеров за День N-1
+Достигнут означает, что уровень триггера находится внутри предоставленного диапазона максимум/минимум за 24 часа; не достигнут означает, что он находится вне диапазона; неопределённо означает, что текущих значений максимума, минимума или последней цены недостаточно. Касание не доказывает исполнение.
 {trigger_lines}
 
-## 2. Derivatives / Funding / Liquidations
+## 2. Деривативы / Фандинг / Ликвидации
 {funding_lines}
-Liquidation data: unavailable (not provided in supplied data).
+Данные о ликвидациях: недоступны (не предоставлены во входных данных).
 
-## 3. Macro / Onchain sentiment
-Fear & Greed: {snapshot_value['fear_greed']}
-BTC dominance: 58.8%
-Additional macro data: unavailable (not provided in supplied data).
-Onchain data: unavailable (not provided in supplied data).
+## 3. Макроэкономика / Ончейн-настроения
+Индекс страха и жадности: {snapshot_value['fear_greed']}
+Доминирование BTC: 58.8%
+Дополнительные макроданные: недоступны (не предоставлены во входных данных).
+Ончейн-данные: недоступны (не предоставлены во входных данных).
 
-## 4. 8-asset comparative summary table
+## 4. Сводная таблица по 8 активам
 {chr(10).join(table_lines)}
 
-## 5. Practical trading triggers for 1 BTC + $20k USDT model balance
-Model balance (separate from tracked portfolio): 1 BTC + $20,000 USDT.
-- If BTC trades above $91,000, sell 0.10 BTC from the model balance.
-- If BTC trades below $89,000, deploy $2,000 USDT from the model balance.
-No trades are executed by this report."""
+## 5. Практические торговые триггеры для модельного баланса 1 BTC + $20k USDT
+Модельный баланс (отдельно от отслеживаемого портфеля): 1 BTC + $20,000 USDT.
+- Если BTC торгуется выше $91,000, продать 0.10 BTC из модельного баланса.
+- Если BTC торгуется ниже $89,000, использовать $2,000 USDT из модельного баланса.
+Этот отчёт не исполняет сделки."""
 
 
 class PipelineTests(unittest.TestCase):
@@ -117,6 +118,30 @@ class PipelineTests(unittest.TestCase):
             state=self.state,
         )
 
+    def test_prompt_requires_russian_analysis(self):
+        prompt = cron_pipeline.build_prompt(
+            43, self.snapshot, self.previous, self.state, self.metrics
+        )
+        self.assertIn("отчёт на русском языке", prompt)
+        self.assertIn(
+            "Весь аналитический текст должен быть написан на русском языке",
+            cron_pipeline.SYSTEM_INSTRUCTION,
+        )
+
+    def test_english_report_is_rejected(self):
+        english = self.conforming_report.replace(
+            "сравнение с диапазоном не доказывает исполнение.",
+            "This trigger was not touched and does not prove execution.",
+            1,
+        )
+        with self.assertRaisesRegex(cron_pipeline.PipelineError, "English-language prose"):
+            cron_pipeline.validate_report_markdown(
+                english,
+                snapshot=self.snapshot,
+                current_metrics=self.metrics,
+                state=self.state,
+            )
+
     def test_structural_validation_rejects_current_day_36_shape(self):
         day_36 = next(report for report in self.document["reports"] if report["day"] == 36)
         with self.assertRaisesRegex(cron_pipeline.PipelineError, "exactly the five required"):
@@ -153,8 +178,8 @@ class PipelineTests(unittest.TestCase):
         )
         self.assertEqual(result, self.conforming_report)
         self.assertEqual(len(prompts), 2)
-        self.assertIn("deterministic validation", prompts[1])
-        self.assertIn("PREVIOUS INVALID RESPONSE", prompts[1])
+        self.assertIn("детерминированную проверку", prompts[1])
+        self.assertIn("ПРЕДЫДУЩИЙ НЕКОРРЕКТНЫЙ ОТВЕТ", prompts[1])
 
     def test_persistent_invalid_output_fails_before_json_write(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -202,6 +227,10 @@ class PipelineTests(unittest.TestCase):
             saved_reports = json.loads(reports_path.read_text(encoding="utf-8"))
             saved_state = json.loads(state_path.read_text(encoding="utf-8"))
             self.assertEqual(report["day"], expected_day)
+            self.assertEqual(
+                report["title"],
+                f"День {expected_day}: количественный обзор крипторынка",
+            )
             self.assertIsInstance(report["metrics"]["portfolio_value"], float)
             self.assertEqual(saved_reports["reports"][0]["day"], expected_day)
             self.assertEqual(saved_state["execution"]["last_report_day"], expected_day)

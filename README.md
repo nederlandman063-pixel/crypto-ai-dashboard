@@ -1,6 +1,6 @@
 # Crypto AI Dashboard
 
-A cron-driven quantitative crypto analysis pipeline and a static, responsive Three.js dashboard for GitHub Pages. The pipeline reads public Binance spot/futures data and Alternative.me's Fear & Greed index, asks Gemini for a strictly validated five-section Markdown analysis, revalues holdings, and atomically updates local JSON state.
+A cron-driven quantitative crypto analysis pipeline and a static, responsive Three.js dashboard for GitHub Pages. The pipeline reads public Binance spot/futures data and Alternative.me's Fear & Greed index, asks Gemini for a strictly validated five-section Russian-language Markdown analysis, revalues holdings, and atomically updates local JSON state.
 
 The software does not place, submit, cancel, or simulate exchange orders.
 
@@ -47,6 +47,8 @@ python scripts/cron_pipeline.py
 
 The command is path-safe when invoked from the repository root or the `scripts/` directory. It fails before producing a report when `GEMINI_API_KEY` is missing, and it does not fabricate fallback AI text.
 
+Gemini is instructed to write every new report in Russian. Russian headings, required phrases, and the absence of English prose are validated before a report can be persisted or published. Existing historical reports remain unchanged.
+
 ## Local dashboard
 
 Build the same static data layout used by Pages, then serve `public/` over HTTP:
@@ -74,7 +76,7 @@ The test suite uses deterministic HTTP/Gemini doubles and runs the next-day pipe
 1. Push the repository to GitHub.
 2. In **Settings → Secrets and variables → Actions**, create the repository secret `GEMINI_API_KEY`.
 3. In **Settings → Pages**, select **GitHub Actions** as the source.
-4. Run **Actions → Daily crypto analysis and Pages → Run workflow** once, or wait for the `0 0 * * *` UTC schedule.
+4. Run **Actions → Daily crypto analysis and Pages → Run workflow** once, or wait for the `0 10 * * *` UTC schedule.
 
 The workflow serializes runs, commits only `data/reports.json` and `data/state.json` as `github-actions[bot]`, rebases/retries pushes, copies data into the Pages artifact, and deploys `public/`. The local implementation does not deploy anything by itself.
 

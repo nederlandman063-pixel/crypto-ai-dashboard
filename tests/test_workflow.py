@@ -10,7 +10,7 @@ WORKFLOW = (ROOT / ".github/workflows/daily_cron.yml").read_text(encoding="utf-8
 class WorkflowContractTests(unittest.TestCase):
     def test_required_schedule_permissions_and_jobs(self):
         for fragment in (
-            "cron: '0 0 * * *'",
+            "cron: '0 10 * * *'",
             "workflow_dispatch:",
             "deploy_only:",
             "inputs.deploy_only != true",

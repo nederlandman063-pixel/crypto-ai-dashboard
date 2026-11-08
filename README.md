@@ -1,6 +1,6 @@
 # Crypto AI Dashboard
 
-A cron-driven quantitative crypto analysis pipeline and a static, responsive Three.js dashboard for GitHub Pages. The pipeline reads public Binance spot/futures data and Alternative.me's Fear & Greed index, asks Gemini for a strictly validated five-section Russian-language Markdown analysis, revalues holdings, and atomically updates local JSON state.
+A cron-driven quantitative crypto analysis pipeline and a static, responsive Three.js dashboard for GitHub Pages. The pipeline reads public Binance spot/futures data and Alternative.me's Fear & Greed index, asks Gemini for a strictly validated seven-section Russian-language investment-note analysis, revalues holdings, and atomically updates local JSON state.
 
 The software does not place, submit, cancel, or simulate exchange orders.
 
@@ -47,7 +47,7 @@ python scripts/cron_pipeline.py
 
 The command is path-safe when invoked from the repository root or the `scripts/` directory. It fails before producing a report when `GEMINI_API_KEY` is missing, and it does not fabricate fallback AI text.
 
-Gemini is instructed to write every new report in Russian. Russian headings, required phrases, and the absence of English prose are validated before a report can be persisted or published. Existing historical reports remain unchanged.
+Gemini is instructed to write every new report in Russian with a detailed retrospective, derivatives and sentiment interpretation, an eight-asset table, three conditional model-balance scenarios, a non-executing daily decision, and an exact portfolio summary. Russian headings, minimum Cyrillic depth, required phrases, and snapshot-backed numeric values are validated before a report can be persisted or published. Missing liquidation, open-interest, macro, or on-chain inputs must be disclosed rather than invented. Existing historical reports remain unchanged.
 
 ## Local dashboard
 
@@ -69,7 +69,7 @@ python -m json.tool data/reports.json >/dev/null
 python -m json.tool data/state.json >/dev/null
 ```
 
-The test suite uses deterministic HTTP/Gemini doubles and runs the next-day pipeline in a temporary directory. It covers exact headings, snapshot-backed table/funding values, bounded repair, rejection of the legacy Day 36 shape, and failure before persistence. It never calls Gemini or modifies canonical report data.
+The test suite uses deterministic HTTP/Gemini doubles and runs the next-day pipeline in a temporary directory. It covers all seven exact headings, snapshot-backed table/funding and portfolio values, bounded repair, rejection of the legacy Day 36 shape, and failure before persistence. It never calls Gemini or modifies canonical report data.
 
 ## GitHub Actions and Pages
 

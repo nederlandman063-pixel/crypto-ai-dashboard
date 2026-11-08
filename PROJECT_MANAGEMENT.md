@@ -13,7 +13,7 @@ Reviewed 2026-10-28 against upstream commit 5c77c01.
 
 ## Architecture
 
-Public Binance spot/futures endpoints and Alternative.me sentiment feed `scripts/market_data.py`. `scripts/cron_pipeline.py` revalues fixed holdings and asks Gemini 2.5 Flash for a report, validates five required sections and numeric references, and retries invalid output up to three times. Canonical JSON lives in `data/`. GitHub Actions commits generated data and deploys `public/` to GitHub Pages. The Russian-language interface uses Tailwind, Three.js, Chart.js, marked, and DOMPurify via CDNs.
+Public Binance spot/futures endpoints and Alternative.me sentiment feed `scripts/market_data.py`. `scripts/cron_pipeline.py` revalues fixed holdings and asks Gemini 2.5 Flash for a detailed Russian investment-note report, validates seven required sections and snapshot-backed numeric references, and retries invalid output up to three times. Canonical JSON lives in `data/`. GitHub Actions commits generated data and deploys `public/` to GitHub Pages. The Russian-language interface uses Tailwind, Three.js, Chart.js, marked, and DOMPurify via CDNs.
 
 The application tracks a model portfolio and pending triggers. It does not submit or execute exchange orders. The separate 1 BTC + $20k model in the report is distinct from the tracked portfolio. The initial $99,960 capital and $10,000 reserved funds are accounting assumptions documented in README.
 

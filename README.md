@@ -47,6 +47,8 @@ python scripts/cron_pipeline.py
 
 The command is path-safe when invoked from the repository root or the `scripts/` directory. It fails before producing a report when `GEMINI_API_KEY` is missing, and it does not fabricate fallback AI text.
 
+The Gemini client explicitly uses the `v1beta` API because the report depends on system instructions. This avoids SDK-default changes silently routing the request through an incompatible stable endpoint.
+
 Gemini is instructed to write every new report in Russian with a detailed retrospective, derivatives and sentiment interpretation, an eight-asset table, three conditional model-balance scenarios, a non-executing daily decision, and an exact portfolio summary. Russian headings, minimum Cyrillic depth, required phrases, and snapshot-backed numeric values are validated before a report can be persisted or published. Missing liquidation, open-interest, macro, or on-chain inputs must be disclosed rather than invented. Existing historical reports remain unchanged.
 
 ## Local dashboard

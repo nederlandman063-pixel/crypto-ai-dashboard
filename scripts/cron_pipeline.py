@@ -20,6 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORTS_PATH = REPO_ROOT / "data" / "reports.json"
 DEFAULT_STATE_PATH = REPO_ROOT / "data" / "state.json"
 MODEL = "gemini-2.5-flash"
+GEMINI_API_VERSION = "v1beta"
 MAX_REPORT_ATTEMPTS = 3
 MIN_REPORT_CYRILLIC_CHARS = 1800
 ASSET_SYMBOLS = ("BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "DOGE", "LINK")
@@ -225,7 +226,10 @@ def generate_with_gemini(prompt: str, api_key: str) -> str:
         raise PipelineError("google-genai is not installed; install scripts/requirements.txt") from exc
 
     try:
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(api_version=GEMINI_API_VERSION),
+        )
         response = client.models.generate_content(
             model=MODEL,
             contents=prompt,

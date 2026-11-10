@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -145,6 +146,22 @@ class PipelineTests(unittest.TestCase):
 
         self.assertIsNotNone(genai.Client)
         self.assertEqual(cron_pipeline.MODEL, "gemini-2.5-flash")
+        self.assertEqual(cron_pipeline.GEMINI_API_VERSION, "v1beta")
+
+    def test_gemini_client_explicitly_uses_v1beta_for_system_instruction(self):
+        response = MagicMock()
+        response.text = self.conforming_report
+        client = MagicMock()
+        client.models.generate_content.return_value = response
+
+        with patch("google.genai.Client", return_value=client) as client_factory:
+            result = cron_pipeline.generate_with_gemini("prompt", "test-key")
+
+        self.assertEqual(result, self.conforming_report)
+        http_options = client_factory.call_args.kwargs["http_options"]
+        self.assertEqual(http_options.api_version, "v1beta")
+        generation_config = client.models.generate_content.call_args.kwargs["config"]
+        self.assertEqual(generation_config.system_instruction, cron_pipeline.SYSTEM_INSTRUCTION)
 
     def test_missing_api_key_fails_without_calling_network(self):
         with self.assertRaisesRegex(cron_pipeline.PipelineError, "GEMINI_API_KEY"):

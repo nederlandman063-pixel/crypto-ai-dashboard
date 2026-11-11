@@ -63,7 +63,7 @@ SYSTEM_INSTRUCTION = """Вы — ведущий количественный а�
 
 Раздел 1. Начните с точной строки: `Достигнут означает, что уровень триггера находится внутри предоставленного диапазона максимум/минимум за 24 часа; не достигнут означает, что он находится вне диапазона; неопределённо означает, что текущих значений максимума, минимума или последней цены недостаточно. Касание не доказывает исполнение.` Сначала перескажите базовый сценарий и ключевые триггеры предыдущего отчёта. Затем сопоставьте их с фактическим суточным диапазоном. Для каждого ордера из state укажите id, статус, символ и точные high_24h, low_24h и last; классифицируйте уровень как «достигнут», «не достигнут» или «неопределённо». Отдельно дайте строки `Оценка сценария прошлого отчёта:` и `Статус отслеживаемого портфеля:`. Оценка сценария может быть только «подтверждён», «частично подтверждён», «не подтверждён» или «недостаточно данных»; не назначайте вымышленный процент точности. Объясните, как движение каждого удерживаемого актива изменило его текущую стоимость и общий PnL.
 
-Раздел 2. Для каждого доступного значения фандинга приведите один пункт строго в формате `- BTCUSDT ставка фандинга (lastFundingRate): 0.00001`, подставив точные исходные символ и значение. После списка добавьте `Интерпретация фандинга:` и сравните знак и относительную величину ставок между восемью активами без внешних порогов. Обязательно включите точные строки `Данные о ликвидациях: недоступны (не предоставлены во входных данных).` и `Открытый интерес: недоступен (не предоставлен во входных данных).` Не упоминайте Coinglass или CoinAnk как источник, поскольку их данных нет во входном JSON.
+Раздел 2. Для каждого доступного значения фандинга приведите один пункт строго в формате `- BTCUSDT ставка фандинга (lastFundingRate): 0.00001`, подставив точные исходные символ и значение. После списка добавьте `Интерпретация фандинга:` и сравните знак и относительную величину ставок между восемью активами без внешних порогов. Затем для каждого доступного значения открытого интереса приведите один пункт строго в формате `- BTCUSDT открытый интерес (open_interest): 100; стоимость (open_interest_usd): 1000; изменение 24ч (open_interest_change_24h_percent): 2.5`, точно подставив три исходных значения. После списка добавьте `Интерпретация открытого интереса:` и сопоставьте изменение OI с суточной ценовой динамикой и фандингом, не делая вывод о направлении позиций только из OI. Если данных OI нет, используйте точную строку `Открытый интерес: недоступен (не предоставлен во входных данных).` Если объект `liquidations_24h` доступен, приведите точную строку `Сводка ликвидаций за 24ч: событий <event_count>; объём <notional_usd> USD; лонги <long_liquidations_usd> USD; шорты <short_liquidations_usd> USD.`, подставив исходные значения. Если `largest_event` доступен, добавьте точную строку `Крупнейшая ликвидация: <symbol>; сторона <side>; объём <notional_usd> USD; цена <price>.` Затем добавьте строки `Интерпретация ликвидаций:` и `Ограничение выборки ликвидаций: поток Binance передаёт не более последнего события по символу за интервал 1000 мс, поэтому сумма является нижней оценкой.` Не трактуйте BUY/SELL как рыночный прогноз: SELL означает принудительное закрытие длинной позиции, BUY — короткой. Если объект `liquidations_24h` отсутствует, обязательно включите точную строку `Данные о ликвидациях: недоступны (не предоставлены во входных данных).` Не упоминайте Coinglass или CoinAnk как источник, если их данных нет во входном JSON.
 
 Раздел 3. Используйте строки `Индекс страха и жадности: <точное значение>` и `Доминирование BTC: <точное значение>%`, если значения доступны. Обязательно добавьте `Дополнительные макроданные: недоступны (не предоставлены во входных данных).` и `Ончейн-данные: недоступны (не предоставлены во входных данных).` Затем дайте строку `Рыночный режим:` и сформулируйте режим только из суточной динамики восьми активов, положения последних цен внутри диапазонов, фандинга и индекса настроений. Явно отметьте, что доминирование BTC перенесено из предыдущего отчёта, если у него нет свежей временной метки.
 
@@ -387,12 +387,89 @@ def _validate_funding(section: str, snapshot: dict[str, Any]) -> None:
         raise PipelineError("Section 2 must cite every available lastFundingRate exactly once")
     for symbol, expected_value in expected.items():
         _require_matching_number(actual[symbol], expected_value, f"{symbol} lastFundingRate")
-    if not re.search(r"(?i)Данные о ликвидациях:\s*недоступны", section):
-        raise PipelineError("Section 2 must explicitly state that liquidation data is unavailable")
-    if not re.search(r"(?i)Открытый интерес:\s*недоступен", section):
-        raise PipelineError("Section 2 must explicitly state that open-interest data is unavailable")
     if not re.search(r"(?im)^Интерпретация фандинга:", section):
         raise PipelineError("Section 2 must interpret the supplied funding rates")
+
+    open_interest_pattern = re.compile(
+        r"(?im)^\s*[-*]\s*([A-Z]+USDT)\s+открытый интерес "
+        r"\(open_interest\):\s*`?([-+0-9.eE]+)`?;\s*"
+        r"стоимость \(open_interest_usd\):\s*`?([-+0-9.eE]+)`?;\s*"
+        r"изменение 24ч \(open_interest_change_24h_percent\):\s*`?([-+0-9.eE]+)`?\s*$"
+    )
+    open_interest_references = open_interest_pattern.findall(section)
+    actual_open_interest = {
+        symbol: (quantity, value_usd, change_24h)
+        for symbol, quantity, value_usd, change_24h in open_interest_references
+    }
+    expected_open_interest = {
+        f"{symbol}USDT": market
+        for symbol in ASSET_SYMBOLS
+        if isinstance((market := markets.get(f"{symbol}USDT")), dict)
+        and market.get("open_interest") is not None
+        and market.get("open_interest_usd") is not None
+        and market.get("open_interest_change_24h_percent") is not None
+    }
+    if expected_open_interest:
+        if (
+            len(open_interest_references) != len(actual_open_interest)
+            or set(actual_open_interest) != set(expected_open_interest)
+        ):
+            raise PipelineError("Section 2 must cite every available open-interest record exactly once")
+        for symbol, market in expected_open_interest.items():
+            quantity, value_usd, change_24h = actual_open_interest[symbol]
+            _require_matching_number(quantity, market["open_interest"], f"{symbol} open_interest")
+            _require_matching_number(value_usd, market["open_interest_usd"], f"{symbol} open_interest_usd")
+            _require_matching_number(
+                change_24h,
+                market["open_interest_change_24h_percent"],
+                f"{symbol} open_interest_change_24h_percent",
+            )
+        if not re.search(r"(?im)^Интерпретация открытого интереса:", section):
+            raise PipelineError("Section 2 must interpret the supplied open-interest values")
+    elif not re.search(r"(?i)Открытый интерес:\s*недоступен", section):
+        raise PipelineError("Section 2 must explicitly state that open-interest data is unavailable")
+
+    liquidations = snapshot.get("liquidations_24h")
+    if not isinstance(liquidations, dict):
+        if not re.search(r"(?i)Данные о ликвидациях:\s*недоступны", section):
+            raise PipelineError("Section 2 must explicitly state that liquidation data is unavailable")
+        return
+
+    summary_match = re.search(
+        r"(?im)^Сводка ликвидаций за 24ч:\s*событий\s+([-+0-9.eE]+);\s*"
+        r"объём\s+([-+0-9.eE]+)\s+USD;\s*лонги\s+([-+0-9.eE]+)\s+USD;\s*"
+        r"шорты\s+([-+0-9.eE]+)\s+USD\.\s*$",
+        section,
+    )
+    if summary_match is None:
+        raise PipelineError("Section 2 must cite the supplied 24h liquidation summary")
+    for actual_value, field in zip(
+        summary_match.groups(),
+        ("event_count", "notional_usd", "long_liquidations_usd", "short_liquidations_usd"),
+        strict=True,
+    ):
+        _require_matching_number(actual_value, liquidations.get(field), f"liquidations {field}")
+
+    largest = liquidations.get("largest_event")
+    largest_match = re.search(
+        r"(?im)^Крупнейшая ликвидация:\s*([A-Z]+USDT);\s*сторона\s+(BUY|SELL);\s*"
+        r"объём\s+([-+0-9.eE]+)\s+USD;\s*цена\s+([-+0-9.eE]+)\.\s*$",
+        section,
+    )
+    if isinstance(largest, dict):
+        if largest_match is None:
+            raise PipelineError("Section 2 must cite the largest supplied liquidation event")
+        symbol, side, notional, price = largest_match.groups()
+        if symbol != largest.get("symbol") or side != largest.get("side"):
+            raise PipelineError("Largest liquidation symbol or side does not match the snapshot")
+        _require_matching_number(notional, largest.get("notional_usd"), "largest liquidation notional")
+        _require_matching_number(price, largest.get("price"), "largest liquidation price")
+    elif largest_match is not None:
+        raise PipelineError("Section 2 must not invent a largest liquidation event")
+    if not re.search(r"(?im)^Интерпретация ликвидаций:", section):
+        raise PipelineError("Section 2 must interpret the supplied liquidation data")
+    if not re.search(r"(?im)^Ограничение выборки ликвидаций:", section):
+        raise PipelineError("Section 2 must state the Binance stream sampling limitation")
 
 
 def _validate_sentiment(section: str, current_metrics: dict[str, Any]) -> None:

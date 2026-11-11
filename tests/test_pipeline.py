@@ -26,6 +26,11 @@ def snapshot():
             "volume_24h": 1.0,
             "percent_change_24h": 0.0,
             "last_funding_rate": 0.0,
+            "open_interest": 100.0,
+            "open_interest_usd": 1000.0,
+            "open_interest_change_24h_percent": 25.0,
+            "open_interest_time": 2000,
+            "open_interest_reference_time": 1000,
         }
     return {
         "as_of": "2026-10-24T00:00:00+00:00",
@@ -49,6 +54,37 @@ def valid_report(snapshot_value, state, metrics):
         f"{snapshot_value['markets'][f'{symbol}USDT']['last_funding_rate']}"
         for symbol in cron_pipeline.ASSET_SYMBOLS
     )
+    open_interest_lines = "\n".join(
+        f"- {symbol}USDT открытый интерес (open_interest): "
+        f"{snapshot_value['markets'][f'{symbol}USDT']['open_interest']}; "
+        f"стоимость (open_interest_usd): "
+        f"{snapshot_value['markets'][f'{symbol}USDT']['open_interest_usd']}; "
+        f"изменение 24ч (open_interest_change_24h_percent): "
+        f"{snapshot_value['markets'][f'{symbol}USDT']['open_interest_change_24h_percent']}"
+        for symbol in cron_pipeline.ASSET_SYMBOLS
+    )
+    liquidations = snapshot_value.get("liquidations_24h")
+    if isinstance(liquidations, dict):
+        largest = liquidations.get("largest_event")
+        largest_line = ""
+        if isinstance(largest, dict):
+            largest_line = (
+                f"\nКрупнейшая ликвидация: {largest['symbol']}; сторона {largest['side']}; "
+                f"объём {largest['notional_usd']} USD; цена {largest['price']}."
+            )
+        liquidation_block = (
+            f"Сводка ликвидаций за 24ч: событий {liquidations['event_count']}; "
+            f"объём {liquidations['notional_usd']} USD; "
+            f"лонги {liquidations['long_liquidations_usd']} USD; "
+            f"шорты {liquidations['short_liquidations_usd']} USD."
+            f"{largest_line}\n"
+            "Интерпретация ликвидаций: принудительные закрытия длинных и коротких позиций "
+            "сопоставляются с ценой и открытым интересом без направленного прогноза.\n"
+            "Ограничение выборки ликвидаций: поток Binance передаёт не более последнего события "
+            "по символу за интервал 1000 мс, поэтому сумма является нижней оценкой."
+        )
+    else:
+        liquidation_block = "Данные о ликвидациях: недоступны (не предоставлены во входных данных)."
     table_lines = [
         "| Тикер | Максимум 24ч | Минимум 24ч | Последняя цена | Изменение 24ч, % | Объём 24ч | Фандинг | Перспектива 24–72ч |",
         "|---|---:|---:|---:|---:|---:|---:|---|",
@@ -87,10 +123,11 @@ def valid_report(snapshot_value, state, metrics):
 
 ## 2. Мониторинг деривативов
 {funding_lines}
-Интерпретация фандинга: все доступные ставки равны между собой, поэтому снимок не показывает относительного перекоса в стоимости удержания длинных позиций по одному активу против другого. Нулевая ставка сама по себе не доказывает нейтрального позиционирования всего рынка, поскольку открытый интерес и распределение плеча во входных данных отсутствуют.
-Данные о ликвидациях: недоступны (не предоставлены во входных данных).
-Открытый интерес: недоступен (не предоставлен во входных данных).
-Без рядов ликвидаций и открытого интереса невозможно надёжно определить зоны скопления принудительных закрытий или изменение общего кредитного плеча. Поэтому раздел ограничивается проверяемым фандингом и не приписывает рынку признаки перегрева, которых нет в исходном снимке.
+Интерпретация фандинга: все доступные ставки равны между собой, поэтому снимок не показывает относительного перекоса в стоимости удержания длинных позиций по одному активу против другого. Нулевая ставка сама по себе не доказывает нейтрального позиционирования всего рынка и рассматривается вместе с изменением открытого интереса.
+{open_interest_lines}
+Интерпретация открытого интереса: все восемь активов показывают одинаковое положительное изменение открытого интереса, поэтому данные подтверждают расширение совокупного позиционирования, но сами по себе не определяют направление позиций.
+{liquidation_block}
+Без ряда ликвидаций невозможно надёжно определить интенсивность принудительных закрытий. Вывод по общему кредитному плечу ограничен фактическими изменениями открытого интереса и не определяет направление длинных или коротких позиций без дополнительных данных.
 
 ## 3. Макро-сантимент и ончейн-структура
 Индекс страха и жадности: {snapshot_value['fear_greed']}
@@ -182,6 +219,46 @@ class PipelineTests(unittest.TestCase):
             current_metrics=self.metrics,
             state=self.state,
         )
+
+    def test_structural_validation_accepts_exact_liquidation_data(self):
+        self.snapshot["liquidations_24h"] = {
+            "event_count": 3,
+            "notional_usd": 450.0,
+            "long_liquidations_usd": 150.0,
+            "short_liquidations_usd": 300.0,
+            "largest_event": {
+                "symbol": "BTCUSDT",
+                "side": "BUY",
+                "notional_usd": 200.0,
+                "price": 100.0,
+            },
+        }
+        report = valid_report(self.snapshot, self.state, self.metrics)
+        cron_pipeline.validate_report_markdown(
+            report,
+            snapshot=self.snapshot,
+            current_metrics=self.metrics,
+            state=self.state,
+        )
+
+    def test_validation_rejects_incorrect_liquidation_total(self):
+        self.snapshot["liquidations_24h"] = {
+            "event_count": 3,
+            "notional_usd": 450.0,
+            "long_liquidations_usd": 150.0,
+            "short_liquidations_usd": 300.0,
+            "largest_event": None,
+        }
+        report = valid_report(self.snapshot, self.state, self.metrics).replace(
+            "объём 450.0 USD", "объём 451.0 USD", 1
+        )
+        with self.assertRaisesRegex(cron_pipeline.PipelineError, "liquidations notional_usd"):
+            cron_pipeline.validate_report_markdown(
+                report,
+                snapshot=self.snapshot,
+                current_metrics=self.metrics,
+                state=self.state,
+            )
 
     def test_prompt_requires_russian_analysis(self):
         prompt = cron_pipeline.build_prompt(

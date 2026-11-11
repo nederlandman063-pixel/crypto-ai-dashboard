@@ -23,6 +23,7 @@ class WorkflowContractTests(unittest.TestCase):
             "uses: actions/upload-pages-artifact@v3",
             "uses: actions/deploy-pages@v4",
             "python scripts/prepare_public.py",
+            "LIQUIDATION_SUMMARY_URL: ${{ vars.LIQUIDATION_SUMMARY_URL }}",
         ):
             self.assertIn(fragment, WORKFLOW)
 

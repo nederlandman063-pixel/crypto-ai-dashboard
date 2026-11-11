@@ -124,7 +124,16 @@
     .funding-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
     .funding { padding: .85rem; border-radius: .75rem; }
     .funding-rate { margin-top: .35rem; font: 700 1rem "Share Tech Mono", monospace; color: var(--green); }
+    .funding-oi { margin-top: .7rem; padding-top: .65rem; border-top: 1px solid rgba(148,163,184,.12); }
+    .funding-oi-value { margin-top: .22rem; color: #e2e8f0; font: 700 .8rem "Share Tech Mono", monospace; }
+    .funding-oi-change { margin-left: .35rem; color: #94a3b8; font-size: .68rem; }
     .notice { margin-top: .8rem; padding: .9rem; border-radius: .75rem; border: 1px solid rgba(255,0,234,.2); background: rgba(255,0,234,.045); color: #cbd5e1; line-height: 1.5; }
+    .liquidation-head, .liquidation-stats { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; flex-wrap: wrap; }
+    .liquidation-stats { margin-top: .55rem; color: #94a3b8; font: 700 .72rem "Share Tech Mono", monospace; }
+    .liquidation-bar { display: flex; height: .42rem; margin-top: .65rem; overflow: hidden; border-radius: 999px; background: rgba(148,163,184,.12); }
+    .liquidation-long { background: linear-gradient(90deg, #fb7185, #f43f5e); }
+    .liquidation-short { background: linear-gradient(90deg, #22d3ee, #3b82f6); }
+    .liquidation-note { margin: .6rem 0 0; color: #64748b; font-size: .72rem; }
     .meta-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 1rem; margin-top: .8rem; color: #64748b; font: .7rem "Share Tech Mono", monospace; }
     .analytics-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
     .back-button { border: 1px solid rgba(0,243,255,.22); border-radius: .65rem; padding: .65rem .8rem; color: var(--cyan); background: rgba(15,23,42,.55); }
@@ -304,7 +313,7 @@
           <article id="derivatives-panel" class="panel glass" data-testid="derivatives-panel">
             <div class="panel-title"><h3>Пульс деривативов</h3><span class="eyebrow">Binance funding</span></div>
             <div id="funding-list" class="funding-grid"><p class="empty">Нет данных</p></div>
-            <div class="notice"><strong class="mono text-fuchsia-300">Ликвидации:</strong> Недоступно — данные не поступают в текущий конвейер.</div>
+            <div id="liquidation-summary" class="notice" aria-live="polite"><strong class="mono text-fuchsia-300">Ликвидации:</strong> Недоступно — данные не поступают в текущий конвейер.</div>
             <div class="notice"><strong class="mono text-cyan-300">Контекст модели:</strong> отслеживаемый портфель показан отдельно от аналитической модели «1 BTC + $20k». Триггеры в отчетах не означают исполнение ордеров.</div>
             <div class="meta-row"><span id="snapshot-source">Источник: data/reports.json</span><span id="last-updated">Обновление: недоступно</span></div>
           </article>
@@ -341,8 +350,8 @@
                 <div class="report-chart-wrap"><canvas id="reportMarketChart" aria-label="График изменения восьми активов за 24 часа" role="img"></canvas><div id="report-market-fallback" class="chart-fallback" hidden>Рыночные данные недоступны.</div></div>
               </article>
               <article class="report-chart-card">
-                <div class="report-chart-head"><div><div class="eyebrow">Portfolio mix</div><h3>Структура портфеля</h3></div><p>Доли по текущей стоимости</p></div>
-                <div class="report-chart-wrap"><canvas id="reportAllocationChart" aria-label="Диаграмма структуры выбранного портфеля" role="img"></canvas><div id="report-allocation-fallback" class="chart-fallback" hidden>Аллокации недоступны.</div></div>
+                <div class="report-chart-head"><div><div class="eyebrow">Leverage pulse</div><h3>Изменение OI за 24 часа</h3></div><p>Динамика открытого интереса</p></div>
+                <div class="report-chart-wrap"><canvas id="reportOiChart" aria-label="График изменения открытого интереса за 24 часа" role="img"></canvas><div id="report-oi-fallback" class="chart-fallback" hidden>Open Interest недоступен.</div></div>
               </article>
             </section>
             <nav id="report-toc" class="report-toc" aria-label="Навигация по разделам отчёта"><span class="report-toc-label">Разделы</span></nav>
@@ -361,7 +370,7 @@
     const decimal = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 4 });
     const compactMoney = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 });
     const palette = ['#f59e0b', '#34d399', '#3b82f6', '#00f3ff', '#a855f7', '#ff00ea', '#fb7185', '#94a3b8'];
-    const state = { reports: [], filtered: [], selected: null, initialCapital: null, performanceChart: null, allocationChart: null, reportMarketChart: null, reportAllocationChart: null };
+    const state = { reports: [], filtered: [], selected: null, initialCapital: null, performanceChart: null, allocationChart: null, reportMarketChart: null, reportOiChart: null };
 
     function isFiniteNumber(value) { return value !== null && value !== '' && Number.isFinite(Number(value)); }
     function formatMoney(value) { return isFiniteNumber(value) ? money.format(Number(value)) : 'Нет данных'; }
@@ -397,7 +406,7 @@
       requestAnimationFrame(() => active.classList.add('view-enter'));
       if (focusHeading && analytics) $('report-title').focus?.();
       window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-      requestAnimationFrame(() => { state.performanceChart?.resize(); state.allocationChart?.resize(); state.reportMarketChart?.resize(); state.reportAllocationChart?.resize(); });
+      requestAnimationFrame(() => { state.performanceChart?.resize(); state.allocationChart?.resize(); state.reportMarketChart?.resize(); state.reportOiChart?.resize(); });
     }
 
     function renderMetrics(report) {
@@ -459,13 +468,54 @@
         const card = node('div', 'funding glass-card');
         card.append(node('div', 'eyebrow', symbol));
         card.append(node('div', 'funding-rate', formatPercent(Number(market.last_funding_rate) * 100, true)));
+        const openInterest = node('div', 'funding-oi');
+        openInterest.append(node('div', 'eyebrow', 'Open interest'));
+        const openInterestValue = isFiniteNumber(market.open_interest_usd) ? compactMoney.format(Number(market.open_interest_usd)) : 'Нет данных';
+        const openInterestChange = isFiniteNumber(market.open_interest_change_24h_percent) ? formatPercent(market.open_interest_change_24h_percent, true) : 'Недоступно';
+        const openInterestLine = node('div', 'funding-oi-value', openInterestValue);
+        const change = node('span', 'funding-oi-change', `24ч ${openInterestChange}`);
+        if (isFiniteNumber(market.open_interest_change_24h_percent)) change.style.color = Number(market.open_interest_change_24h_percent) < 0 ? '#fda4af' : '#6ee7b7';
+        openInterestLine.append(change); openInterest.append(openInterestLine); card.append(openInterest);
         host.append(card);
       });
+      renderLiquidations(report);
       const asOf = report?.market_snapshot?.as_of;
       $('last-updated').textContent = `Обновление: ${asOf ? formatDate(asOf) : 'недоступно'}`;
       const sources = report?.market_snapshot?.sources;
       const labels = sources && typeof sources === 'object' ? Object.keys(sources).join(', ') : '';
       $('snapshot-source').textContent = `Источник: data/reports.json${labels ? ` · ${labels}` : ''}`;
+    }
+
+    function renderLiquidations(report) {
+      const host = $('liquidation-summary'); host.replaceChildren();
+      const summary = report?.market_snapshot?.liquidations_24h;
+      if (!summary || !isFiniteNumber(summary.event_count) || !isFiniteNumber(summary.notional_usd)) {
+        const label = node('strong', 'mono text-fuchsia-300', 'Ликвидации: ');
+        host.append(label, document.createTextNode('недоступны для выбранного отчёта.'));
+        return;
+      }
+      const head = node('div', 'liquidation-head');
+      head.append(node('strong', 'mono text-fuchsia-300', 'Ликвидации · 24ч'));
+      head.append(node('span', 'mono', `${decimal.format(Number(summary.event_count))} событий · ${formatMoney(summary.notional_usd)}`));
+      host.append(head);
+      const longValue = isFiniteNumber(summary.long_liquidations_usd) ? Number(summary.long_liquidations_usd) : 0;
+      const shortValue = isFiniteNumber(summary.short_liquidations_usd) ? Number(summary.short_liquidations_usd) : 0;
+      const total = longValue + shortValue;
+      const stats = node('div', 'liquidation-stats');
+      stats.append(node('span', '', `Лонги ${formatMoney(longValue)}`), node('span', '', `Шорты ${formatMoney(shortValue)}`));
+      host.append(stats);
+      const bar = node('div', 'liquidation-bar');
+      const longBar = node('span', 'liquidation-long');
+      const shortBar = node('span', 'liquidation-short');
+      longBar.style.width = `${total > 0 ? (longValue / total) * 100 : 0}%`;
+      shortBar.style.width = `${total > 0 ? (shortValue / total) * 100 : 0}%`;
+      bar.append(longBar, shortBar); host.append(bar);
+      const largest = summary.largest_event;
+      if (largest && isFiniteNumber(largest.notional_usd)) {
+        const meaning = largest.side === 'SELL' ? 'ликвидация лонга' : largest.side === 'BUY' ? 'ликвидация шорта' : String(largest.side || 'сторона неизвестна');
+        host.append(node('p', 'liquidation-note', `Крупнейшее событие: ${largest.symbol || '—'} · ${meaning} · ${formatMoney(largest.notional_usd)}.`));
+      }
+      host.append(node('p', 'liquidation-note', 'Публичный поток Binance агрегируется с частотой до одного события на символ в секунду; сумма — нижняя оценка.'));
     }
 
     function destroyChart(key) {
@@ -545,7 +595,7 @@
     }
 
     function renderReportCharts(report) {
-      destroyChart('reportMarketChart'); destroyChart('reportAllocationChart');
+      destroyChart('reportMarketChart'); destroyChart('reportOiChart');
       const marketCanvas = $('reportMarketChart'); const marketFallback = $('report-market-fallback');
       const markets = report?.market_snapshot?.markets;
       const marketEntries = markets && typeof markets === 'object'
@@ -564,17 +614,20 @@
         });
       }
 
-      const mixCanvas = $('reportAllocationChart'); const mixFallback = $('report-allocation-fallback');
-      const allocations = (Array.isArray(report?.metrics?.allocations) ? report.metrics.allocations : []).filter((item) => isFiniteNumber(item?.value_usd) && Number(item.value_usd) >= 0);
-      if (!window.Chart || !allocations.length) {
-        mixCanvas.hidden = true; mixFallback.hidden = false;
-        mixFallback.textContent = window.Chart ? 'В выбранном отчёте нет структуры портфеля.' : 'Chart.js недоступен.';
+      const oiCanvas = $('reportOiChart'); const oiFallback = $('report-oi-fallback');
+      const oiEntries = markets && typeof markets === 'object'
+        ? Object.entries(markets).filter(([, item]) => isFiniteNumber(item?.open_interest_change_24h_percent))
+        : [];
+      if (!window.Chart || !oiEntries.length) {
+        oiCanvas.hidden = true; oiFallback.hidden = false;
+        oiFallback.textContent = window.Chart ? 'В выбранном отчёте нет динамики Open Interest.' : 'Chart.js недоступен.';
       } else {
-        mixCanvas.hidden = false; mixFallback.hidden = true;
-        state.reportAllocationChart = new Chart(mixCanvas, {
-          type: 'doughnut',
-          data: { labels: allocations.map((item) => item.symbol || item.label || 'Актив'), datasets: [{ data: allocations.map((item) => Number(item.value_usd)), backgroundColor: allocations.map((_, index) => palette[index % palette.length]), borderColor: '#07101d', borderWidth: 3, hoverOffset: 5 }] },
-          options: { responsive: true, maintainAspectRatio: false, cutout: '68%', animation: matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 420 }, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 8, boxHeight: 8, usePointStyle: true, padding: 12, font: { family: 'Share Tech Mono', size: 10 } } }, tooltip: { backgroundColor: 'rgba(9,14,26,.97)', borderColor: 'rgba(148,163,184,.25)', borderWidth: 1, callbacks: { label: (context) => ` ${context.label}: ${formatMoney(context.raw)}` } } } }
+        const oiChanges = oiEntries.map(([, item]) => Number(item.open_interest_change_24h_percent));
+        oiCanvas.hidden = false; oiFallback.hidden = true;
+        state.reportOiChart = new Chart(oiCanvas, {
+          type: 'bar',
+          data: { labels: oiEntries.map(([symbol]) => symbol.replace('USDT', '')), datasets: [{ data: oiChanges, backgroundColor: oiChanges.map((value) => value >= 0 ? 'rgba(59,130,246,.72)' : 'rgba(168,85,247,.72)'), borderColor: oiChanges.map((value) => value >= 0 ? '#60a5fa' : '#c084fc'), borderWidth: 1, borderRadius: 5, maxBarThickness: 26 }] },
+          options: { responsive: true, maintainAspectRatio: false, animation: matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 420 }, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(9,14,26,.97)', borderColor: 'rgba(148,163,184,.25)', borderWidth: 1, callbacks: { label: (context) => { const market = oiEntries[context.dataIndex][1]; return ` OI ${formatPercent(context.raw, true)} · ${formatMoney(market.open_interest_usd)}`; } } } }, scales: { x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { family: 'Share Tech Mono', size: 10 } } }, y: { grid: { color: 'rgba(148,163,184,.08)' }, ticks: { color: '#64748b', callback: (value) => `${value}%` } } } }
         });
       }
     }
@@ -588,7 +641,7 @@
     }
 
     function emphasizeLeadingLabel(element) {
-      const labels = ['Оценка сценария прошлого отчёта:', 'Статус отслеживаемого портфеля:', 'Интерпретация фандинга:', 'Рыночный режим:', 'Сравнительный вывод:', 'Решение дня:', 'Стоимость отслеживаемого портфеля:', 'PnL:', 'Свободный денежный резерв:', 'Зарезервировано под лимитные заявки:', 'Доля ликвидного резерва:'];
+      const labels = ['Оценка сценария прошлого отчёта:', 'Статус отслеживаемого портфеля:', 'Интерпретация фандинга:', 'Интерпретация открытого интереса:', 'Рыночный режим:', 'Сравнительный вывод:', 'Решение дня:', 'Стоимость отслеживаемого портфеля:', 'PnL:', 'Свободный денежный резерв:', 'Зарезервировано под лимитные заявки:', 'Доля ликвидного резерва:'];
       const first = element.firstChild;
       if (!first || first.nodeType !== Node.TEXT_NODE) return;
       const label = labels.find((candidate) => first.textContent.trimStart().startsWith(candidate));
@@ -753,7 +806,7 @@
       if (state.performanceChart) { state.performanceChart.options.animation = false; paused ? state.performanceChart.stop() : state.performanceChart.resize(); }
       if (state.allocationChart) { state.allocationChart.options.animation = false; paused ? state.allocationChart.stop() : state.allocationChart.resize(); }
       if (state.reportMarketChart) { state.reportMarketChart.options.animation = false; paused ? state.reportMarketChart.stop() : state.reportMarketChart.resize(); }
-      if (state.reportAllocationChart) { state.reportAllocationChart.options.animation = false; paused ? state.reportAllocationChart.stop() : state.reportAllocationChart.resize(); }
+      if (state.reportOiChart) { state.reportOiChart.options.animation = false; paused ? state.reportOiChart.stop() : state.reportOiChart.resize(); }
     });
     startScene(); loadReports();
   </script>

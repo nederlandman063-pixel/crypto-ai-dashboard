@@ -47,6 +47,7 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.deploy_only != true }}
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          LIQUIDATION_SUMMARY_URL: ${{ vars.LIQUIDATION_SUMMARY_URL }}
         run: python scripts/cron_pipeline.py
       - name: Validate generated JSON and diff scope
         if: ${{ github.event_name != 'workflow_dispatch' || inputs.deploy_only != true }}

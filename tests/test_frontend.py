@@ -100,8 +100,9 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("renderReportBrief", HTML)
         self.assertIn("renderReportCharts", HTML)
         self.assertIn('id="reportMarketChart"', HTML)
-        self.assertIn('id="reportAllocationChart"', HTML)
+        self.assertIn('id="reportOiChart"', HTML)
         self.assertIn("item.percent_change_24h", HTML)
+        self.assertIn("open_interest_change_24h_percent", HTML)
         self.assertIn("archive-search", HTML)
         self.assertIn("filterArchive", HTML)
         self.assertNotIn("Пассивный HODL", HTML)
@@ -118,7 +119,9 @@ class FrontendContractTests(unittest.TestCase):
             "Alpha vs HODL",
         ):
             self.assertNotIn(forbidden, HTML)
-        self.assertIn("Ликвидации:</strong> Недоступно", HTML)
+        self.assertIn('id="liquidation-summary"', HTML)
+        self.assertIn("liquidations_24h", HTML)
+        self.assertIn("сумма — нижняя оценка", HTML)
         self.assertIn("данные не поступают", HTML)
         self.assertIn("1 BTC + $20k", HTML)
         self.assertIn("Триггеры в отчетах не означают исполнение ордеров", HTML)

@@ -145,7 +145,7 @@ class PipelineTests(unittest.TestCase):
         from google import genai
 
         self.assertIsNotNone(genai.Client)
-        self.assertEqual(cron_pipeline.MODEL, "gemini-2.5-flash")
+        self.assertEqual(cron_pipeline.MODEL, "gemini-3.8-flash")
         self.assertEqual(cron_pipeline.GEMINI_API_VERSION, "v1beta1")
 
     def test_gemini_client_uses_vertex_endpoint_and_system_instruction(self):

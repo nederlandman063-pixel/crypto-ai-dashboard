@@ -19,7 +19,7 @@ from market_data import fetch_market_snapshot
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORTS_PATH = REPO_ROOT / "data" / "reports.json"
 DEFAULT_STATE_PATH = REPO_ROOT / "data" / "state.json"
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-3.8-flash"
 GEMINI_API_VERSION = "v1beta1"
 MAX_REPORT_ATTEMPTS = 3
 MIN_REPORT_CYRILLIC_CHARS = 1800

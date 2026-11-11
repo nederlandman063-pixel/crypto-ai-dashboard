@@ -19,8 +19,11 @@ The application tracks a model portfolio and pending triggers. It does not submi
 
 ## Prioritized backlog
 
+The implementation roadmap for the virtual trading system is maintained in [`PAPER_TRADING_ROADMAP.md`](PAPER_TRADING_ROADMAP.md).
+
 | Priority | Work | Completion criterion |
 | --- | --- | --- |
+| P1 | Build the paper-trading accounting core | Implement the versioned account, position, ledger, decision, order, and fill models described in `PAPER_TRADING_ROADMAP.md`; prove accounting invariants with deterministic tests. |
 | P1 | Add push/PR test CI | All existing tests run on pull requests and code pushes; data generation remains separate. Current workflow only runs on schedule/manual dispatch and does not execute tests. |
 | P1 | Label carried-forward BTC dominance | Dashboard/report clearly distinguish historical dominance from refreshed metrics, or use a timestamped live source. |
 | P1 | Make daily runs idempotent | Re-running a successful date does not silently append another day; define an explicit replacement policy. Current code always increments maximum day. |

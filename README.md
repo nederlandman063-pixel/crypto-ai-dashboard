@@ -4,6 +4,10 @@ A cron-driven quantitative crypto analysis pipeline and a static, responsive Thr
 
 The software does not place, submit, cancel, or simulate exchange orders.
 
+The approved design for a future real-price virtual trading account is documented in
+[`PAPER_TRADING_ROADMAP.md`](PAPER_TRADING_ROADMAP.md). It remains a plan until its
+accounting core, risk controls, and paper execution engine are implemented and tested.
+
 ## Repository layout
 
 - `data/reports.json` — canonical report archive, newest first

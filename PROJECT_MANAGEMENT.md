@@ -30,6 +30,11 @@ The application tracks a model portfolio and pending triggers. It does not submi
 | P2 | Improve input validation and outages | Reject nonfinite/invalid market values before AI calls; define bounded retry and clear failure diagnostics. |
 | P2 | Show freshness and operational health | Display stale-data state and distinguish scheduled time from last actual success. Investigate observed schedule delays. |
 | P2 | Browser verification | Exercise archive, charts, navigation, mobile layout, missing data, and CDN failures in a real browser. |
+| Deferred | Deploy the optional liquidation collector | Only after explicit approval: create one continuously running Google Cloud instance/service, a small Storage bucket, and a least-privilege service account; set the GitHub variable `LIQUIDATION_SUMMARY_URL`; verify 24-hour accumulation and cost monitoring. Until then the pipeline must continue publishing normally with liquidation data marked unavailable. |
+
+## Deferred cloud decision
+
+The Binance liquidation WebSocket collector is implemented under `liquidation_service/`, but no Google Cloud resources have been created and no billing has been activated for it. This work is intentionally deferred. The daily workflow treats `LIQUIDATION_SUMMARY_URL` as optional, so spot prices, volume, funding, Fear & Greed, and Binance Open Interest continue to be collected and reports continue to publish when the variable is empty.
 
 ## Maintenance routine
 

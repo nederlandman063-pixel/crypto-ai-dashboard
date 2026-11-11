@@ -130,27 +130,68 @@
     .back-button { border: 1px solid rgba(0,243,255,.22); border-radius: .65rem; padding: .65rem .8rem; color: var(--cyan); background: rgba(15,23,42,.55); }
     .search-wrap { position: relative; width: min(100%, 24rem); }
     .search-wrap input { width: 100%; border: 1px solid rgba(0,243,255,.25); border-radius: .7rem; padding: .7rem .9rem; color: white; background: rgba(3,7,18,.72); }
-    .analytics-grid { display: grid; grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr); gap: 1rem; margin-top: 1rem; align-items: start; }
-    .archive-panel { max-height: 49rem; display: flex; flex-direction: column; }
+    #view-analytics { max-width: 96rem; }
+    .analytics-grid { display: grid; grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr); gap: 1.25rem; margin-top: 1rem; align-items: start; }
+    .archive-panel { position: sticky; top: 6.8rem; max-height: calc(100vh - 8rem); display: flex; flex-direction: column; }
     .archive-list { display: grid; gap: .55rem; overflow: auto; padding-right: .25rem; }
     .archive-item { width: 100%; border: 1px solid rgba(148,163,184,.14); border-radius: .7rem; padding: .75rem; color: #cbd5e1; text-align: left; background: rgba(15,23,42,.42); }
     .archive-item[aria-current="true"] { color: white; border-color: rgba(0,243,255,.68); background: rgba(8,145,178,.14); box-shadow: 0 0 15px rgba(0,243,255,.12); }
     .archive-item-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
     .archive-item-meta { display: flex; justify-content: space-between; gap: .5rem; margin-top: .3rem; color: #64748b; font: .7rem "Share Tech Mono", monospace; }
-    .report-header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(0,243,255,.16); }
-    .report-header h2 { margin: .4rem 0 0; font-size: clamp(1.45rem, 3vw, 2rem); }
-    .report-metric { flex: 0 0 auto; padding: .65rem .8rem; border: 1px solid rgba(0,243,255,.18); border-radius: .7rem; background: rgba(3,7,18,.55); text-align: right; }
-    .report { overflow-wrap: anywhere; }
-    .report h1, .report h2, .report h3 { color: #a5f3fc; line-height: 1.25; margin: 1.45rem 0 .6rem; }
-    .report h1 { font-size: 1.35rem; } .report h2 { font-size: 1.18rem; } .report h3 { font-size: 1.05rem; }
-    .report p, .report li { color: #cbd5e1; line-height: 1.7; }
-    .report ul, .report ol { padding-left: 1.35rem; }
-    .report code { color: #e879f9; font-family: "Share Tech Mono", monospace; }
+    #report-panel { overflow: hidden; padding: 0; border-color: rgba(148,163,184,.2); background: linear-gradient(150deg, rgba(13,20,35,.96), rgba(6,11,21,.96)); }
+    .report-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem; padding: clamp(1.5rem, 3vw, 2.4rem); border-bottom: 1px solid rgba(148,163,184,.14); background: radial-gradient(circle at 85% 10%, rgba(0,243,255,.1), transparent 35%), linear-gradient(130deg, rgba(30,41,59,.48), rgba(7,12,23,.22)); }
+    .report-header-copy { max-width: 48rem; }
+    .report-header h2 { margin: .55rem 0 0; max-width: 46rem; font-size: clamp(1.9rem, 3.5vw, 3rem); font-weight: 600; line-height: 1.08; letter-spacing: -.035em; }
+    .report-deck { margin: .85rem 0 0; max-width: 42rem; color: #94a3b8; font-size: .96rem; line-height: 1.6; }
+    .report-metric { flex: 0 0 auto; min-width: 10.5rem; padding: .95rem 1rem; border: 1px solid rgba(0,243,255,.18); border-radius: .9rem; background: rgba(3,7,18,.62); text-align: right; box-shadow: inset 0 1px rgba(255,255,255,.03); }
+    .report-metric strong { display: block; margin-top: .35rem; font-size: 1.15rem; }
+    .report-brief { margin: 1.5rem clamp(1.25rem, 3vw, 2.4rem) 0; padding: 1.25rem; border: 1px solid rgba(0,243,255,.16); border-radius: 1rem; background: linear-gradient(135deg, rgba(8,145,178,.09), rgba(15,23,42,.52)); }
+    .brief-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+    .brief-heading h3 { margin: .2rem 0 0; font-size: 1.12rem; }
+    .brief-heading p { margin: 0; color: #64748b; font-size: .76rem; }
+    .takeaways-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; }
+    .takeaway { min-width: 0; padding: .9rem; border: 1px solid rgba(148,163,184,.13); border-radius: .8rem; background: rgba(3,7,18,.5); }
+    .takeaway-value { display: block; margin-top: .45rem; color: #f8fafc; font-size: clamp(1.05rem, 2vw, 1.32rem); font-weight: 650; line-height: 1.15; overflow-wrap: anywhere; }
+    .takeaway-value.positive { color: #6ee7b7; } .takeaway-value.negative { color: #fda4af; }
+    .takeaway-note { display: block; margin-top: .4rem; color: #64748b; font-size: .72rem; line-height: 1.45; }
+    .report-visual-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(15rem, .75fr); gap: 1rem; margin: 1rem clamp(1.25rem, 3vw, 2.4rem) 0; }
+    .report-chart-card { min-width: 0; padding: 1.1rem; border: 1px solid rgba(148,163,184,.14); border-radius: 1rem; background: rgba(3,7,18,.48); }
+    .report-chart-head { display: flex; align-items: start; justify-content: space-between; gap: 1rem; margin-bottom: .7rem; }
+    .report-chart-head h3 { margin: .2rem 0 0; font-size: .98rem; }
+    .report-chart-head p { margin: 0; color: #64748b; font-size: .7rem; line-height: 1.4; text-align: right; }
+    .report-chart-wrap { position: relative; height: 15rem; }
+    .report-toc { display: flex; flex-wrap: wrap; gap: .45rem; margin: 1.2rem clamp(1.25rem, 3vw, 2.4rem) 0; padding: .75rem; border: 1px solid rgba(148,163,184,.12); border-radius: .85rem; background: rgba(3,7,18,.42); }
+    .report-toc-label { display: inline-flex; align-items: center; padding: .42rem .55rem; color: #64748b; font: .66rem "Share Tech Mono", monospace; letter-spacing: .1em; text-transform: uppercase; }
+    .report-toc a { display: inline-flex; align-items: center; gap: .35rem; padding: .42rem .62rem; border: 1px solid rgba(148,163,184,.12); border-radius: 999px; color: #94a3b8; background: rgba(15,23,42,.46); font-size: .72rem; line-height: 1.2; text-decoration: none; }
+    .report-toc a:hover { color: var(--cyan); border-color: rgba(0,243,255,.35); }
+    .report { padding: .25rem clamp(1.25rem, 3vw, 2.4rem) 2.5rem; overflow-wrap: anywhere; }
+    .report-section { padding: clamp(2rem, 4vw, 3rem) 0; border-top: 1px solid rgba(148,163,184,.14); scroll-margin-top: 7rem; }
+    .report-section:first-child { border-top: 0; }
+    .report-section-heading { display: flex; align-items: flex-start; gap: .85rem; margin: 0 0 1.4rem; color: #e2e8f0; font-size: clamp(1.35rem, 2.5vw, 1.85rem); font-weight: 600; line-height: 1.2; letter-spacing: -.025em; }
+    .section-index { display: inline-grid; place-items: center; flex: 0 0 auto; width: 2.15rem; height: 2.15rem; border: 1px solid rgba(0,243,255,.35); border-radius: .65rem; color: var(--cyan); background: rgba(8,145,178,.1); font: .8rem "Share Tech Mono", monospace; box-shadow: 0 0 18px rgba(0,243,255,.09); }
+    .section-title { padding-top: .15rem; }
+    .report p { max-width: 78ch; margin: .9rem 0; color: #cbd5e1; font-size: 1rem; line-height: 1.82; }
+    .report p + p { margin-top: 1.15rem; }
+    .report ul, .report ol { display: grid; gap: .65rem; margin: 1rem 0 1.25rem; padding: 0; list-style: none; }
+    .report li { position: relative; max-width: 84ch; padding: .85rem 1rem .85rem 1.2rem; border-left: 2px solid rgba(0,243,255,.3); border-radius: 0 .7rem .7rem 0; color: #cbd5e1; background: rgba(15,23,42,.34); font-size: .95rem; line-height: 1.72; }
+    .report ol { counter-reset: report-list; }
+    .report ol > li { counter-increment: report-list; padding-left: 3.2rem; }
+    .report ol > li::before { content: counter(report-list); position: absolute; left: .9rem; top: .85rem; display: grid; place-items: center; width: 1.45rem; height: 1.45rem; border-radius: 50%; color: #020617; background: var(--cyan); font: 700 .7rem "Share Tech Mono", monospace; }
+    .report-section.scenarios li { border: 1px solid rgba(59,130,246,.18); border-top: 3px solid #3b82f6; border-radius: .8rem; background: linear-gradient(145deg, rgba(30,64,175,.11), rgba(15,23,42,.4)); }
+    .report-section.decisions li { border-left-color: var(--green); }
+    .report-callout { max-width: 84ch !important; padding: 1rem 1.15rem; border: 1px solid rgba(0,243,255,.2); border-left: 3px solid var(--cyan); border-radius: .8rem; background: rgba(8,145,178,.075); }
+    .report-callout.risk { border-color: rgba(251,113,133,.22); border-left-color: #fb7185; background: rgba(127,29,29,.09); }
+    .method-note { padding: .9rem 1rem; border-radius: .75rem; color: #94a3b8 !important; background: rgba(148,163,184,.055); font-size: .86rem !important; line-height: 1.65 !important; }
+    .report strong { color: #f8fafc; font-weight: 650; }
+    .report code { padding: .08rem .3rem; border: 1px solid rgba(232,121,249,.14); border-radius: .3rem; color: #f0abfc; background: rgba(168,85,247,.07); font-family: "Share Tech Mono", monospace; font-size: .86em; }
     .report a { color: var(--cyan); }
-    .report table { width: 100%; min-width: 42rem; border-collapse: collapse; font: .76rem "Share Tech Mono", monospace; }
-    .report th, .report td { padding: .65rem; border: 1px solid rgba(0,243,255,.13); text-align: left; }
-    .report th { color: var(--cyan); background: rgba(15,23,42,.82); }
-    .report-table-scroll { max-width: 100%; overflow-x: auto; }
+    .report table { width: 100%; min-width: 52rem; border-collapse: separate; border-spacing: 0; color: #cbd5e1; font: .74rem "Share Tech Mono", monospace; }
+    .report th, .report td { padding: .78rem .72rem; border-right: 1px solid rgba(148,163,184,.1); border-bottom: 1px solid rgba(148,163,184,.1); text-align: left; vertical-align: top; }
+    .report th { position: sticky; top: 0; z-index: 1; color: #67e8f9; background: #111b2d; font-size: .67rem; letter-spacing: .035em; text-transform: uppercase; }
+    .report tbody tr:nth-child(even) td { background: rgba(15,23,42,.32); }
+    .report tbody tr:hover td { background: rgba(8,145,178,.08); }
+    .report th:first-child, .report td:first-child { border-left: 1px solid rgba(148,163,184,.1); }
+    .report-table-scroll { max-width: 100%; margin: 1.35rem 0; overflow-x: auto; border: 1px solid rgba(148,163,184,.12); border-radius: .85rem; background: rgba(3,7,18,.38); box-shadow: 0 12px 30px -24px #000; }
     .empty { color: #94a3b8; line-height: 1.55; }
     footer { padding: 2rem 1rem; color: #64748b; text-align: center; font: .7rem "Share Tech Mono", monospace; }
     ::-webkit-scrollbar { width: 7px; height: 7px; }
@@ -160,6 +201,9 @@
       .ticker { display: none; }
       .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .dashboard-grid { grid-template-columns: 1fr; }
+      .analytics-grid { grid-template-columns: 1fr; }
+      .archive-panel { position: static; max-height: 25rem; }
+      .takeaways-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 760px) {
       .hud { padding: .5rem; }
@@ -171,12 +215,17 @@
       .hero-content, .analytics-toolbar, .report-header { align-items: stretch; flex-direction: column; }
       .cta, .search-wrap { width: 100%; }
       .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .lower-grid, .analytics-grid { grid-template-columns: 1fr; }
+      .lower-grid, .analytics-grid, .report-visual-grid { grid-template-columns: 1fr; }
       .archive-panel { max-height: 27rem; }
       .report-metric { text-align: left; }
+      .brief-heading, .report-chart-head { align-items: flex-start; flex-direction: column; }
+      .report-chart-head p { text-align: left; }
+      .report-toc { flex-wrap: nowrap; overflow-x: auto; }
+      .report-toc a { flex: 0 0 auto; }
     }
     @media (max-width: 420px) {
       .metrics, .funding-grid { grid-template-columns: 1fr; }
+      .takeaways-grid { grid-template-columns: 1fr; }
       .allocation-legend { grid-template-columns: 1fr; }
       .holding { grid-template-columns: 1fr; }
       .holding-value { text-align: left !important; }
@@ -275,10 +324,29 @@
           </aside>
           <article id="report-panel" class="panel glass" data-testid="report-panel">
             <header class="report-header">
-              <div><div id="report-kicker" class="eyebrow">Отчет AI-агента</div><h2 id="report-title">Загрузка аналитики…</h2></div>
+              <div class="report-header-copy">
+                <div id="report-kicker" class="eyebrow">Отчет AI-агента</div>
+                <h2 id="report-title">Загрузка аналитики…</h2>
+                <p class="report-deck">Ежедневная инвестиционная записка: рыночный режим, структура риска, сценарии и решения для отслеживаемого портфеля.</p>
+              </div>
               <div class="report-metric"><span class="eyebrow block">Оценка счета</span><strong id="report-balance" class="mono neon">Нет данных</strong><span id="report-pnl" class="mono text-xs block mt-1">Недоступно</span></div>
             </header>
-            <div id="report-content" class="report mt-6"><p class="empty">Установка защищенного соединения с архивом.</p></div>
+            <section class="report-brief" data-testid="report-brief" aria-labelledby="brief-title">
+              <div class="brief-heading"><div><div class="eyebrow">Executive brief</div><h3 id="brief-title">Ключевые выводы дня</h3></div><p>Автоматически рассчитано из выбранного снимка</p></div>
+              <div id="report-takeaways" class="takeaways-grid"><p class="empty">Расчёт ключевых выводов…</p></div>
+            </section>
+            <section class="report-visual-grid" data-testid="report-visuals" aria-label="Визуализации выбранного отчёта">
+              <article class="report-chart-card">
+                <div class="report-chart-head"><div><div class="eyebrow">Market breadth</div><h3>Динамика активов за 24 часа</h3></div><p>Фактическое изменение из рыночного снимка</p></div>
+                <div class="report-chart-wrap"><canvas id="reportMarketChart" aria-label="График изменения восьми активов за 24 часа" role="img"></canvas><div id="report-market-fallback" class="chart-fallback" hidden>Рыночные данные недоступны.</div></div>
+              </article>
+              <article class="report-chart-card">
+                <div class="report-chart-head"><div><div class="eyebrow">Portfolio mix</div><h3>Структура портфеля</h3></div><p>Доли по текущей стоимости</p></div>
+                <div class="report-chart-wrap"><canvas id="reportAllocationChart" aria-label="Диаграмма структуры выбранного портфеля" role="img"></canvas><div id="report-allocation-fallback" class="chart-fallback" hidden>Аллокации недоступны.</div></div>
+              </article>
+            </section>
+            <nav id="report-toc" class="report-toc" aria-label="Навигация по разделам отчёта"><span class="report-toc-label">Разделы</span></nav>
+            <div id="report-content" class="report"><p class="empty">Установка защищенного соединения с архивом.</p></div>
           </article>
         </div>
       </section>
@@ -293,7 +361,7 @@
     const decimal = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 4 });
     const compactMoney = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 });
     const palette = ['#f59e0b', '#34d399', '#3b82f6', '#00f3ff', '#a855f7', '#ff00ea', '#fb7185', '#94a3b8'];
-    const state = { reports: [], filtered: [], selected: null, initialCapital: null, performanceChart: null, allocationChart: null };
+    const state = { reports: [], filtered: [], selected: null, initialCapital: null, performanceChart: null, allocationChart: null, reportMarketChart: null, reportAllocationChart: null };
 
     function isFiniteNumber(value) { return value !== null && value !== '' && Number.isFinite(Number(value)); }
     function formatMoney(value) { return isFiniteNumber(value) ? money.format(Number(value)) : 'Нет данных'; }
@@ -329,7 +397,7 @@
       requestAnimationFrame(() => active.classList.add('view-enter'));
       if (focusHeading && analytics) $('report-title').focus?.();
       window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-      requestAnimationFrame(() => { state.performanceChart?.resize(); state.allocationChart?.resize(); });
+      requestAnimationFrame(() => { state.performanceChart?.resize(); state.allocationChart?.resize(); state.reportMarketChart?.resize(); state.reportAllocationChart?.resize(); });
     }
 
     function renderMetrics(report) {
@@ -450,6 +518,67 @@
       });
     }
 
+    function renderReportBrief(report) {
+      const host = $('report-takeaways'); host.replaceChildren();
+      const metrics = report?.metrics || {};
+      const markets = report?.market_snapshot?.markets;
+      const entries = markets && typeof markets === 'object'
+        ? Object.entries(markets).filter(([, item]) => isFiniteNumber(item?.percent_change_24h))
+        : [];
+      const sorted = [...entries].sort((a, b) => Number(b[1].percent_change_24h) - Number(a[1].percent_change_24h));
+      const positive = entries.filter(([, item]) => Number(item.percent_change_24h) > 0).length;
+      const leader = sorted[0]; const laggard = sorted[sorted.length - 1];
+      const fearGreed = isFiniteNumber(metrics.fear_greed) ? Number(metrics.fear_greed) : null;
+      const sentiment = fearGreed === null ? 'Нет данных' : fearGreed < 25 ? 'Экстремальный страх' : fearGreed < 45 ? 'Страх' : fearGreed < 56 ? 'Нейтрально' : fearGreed < 75 ? 'Жадность' : 'Экстремальная жадность';
+      const pnl = isFiniteNumber(metrics.pnl_percent) ? Number(metrics.pnl_percent) : null;
+      const cards = [
+        { label: 'Ширина рынка', value: entries.length ? `${positive} из ${entries.length} в плюсе` : 'Нет данных', note: leader ? `Лидер: ${leader[0]} ${formatPercent(leader[1].percent_change_24h, true)}` : 'Снимок рынка отсутствует', tone: positive > entries.length / 2 ? 'positive' : '' },
+        { label: 'Сантимент', value: fearGreed === null ? 'Нет данных' : `${fearGreed} · ${sentiment}`, note: 'Индекс страха и жадности', tone: fearGreed !== null && fearGreed < 45 ? 'negative' : '' },
+        { label: 'Результат портфеля', value: formatPercent(pnl, true), note: `Оценка ${formatMoney(metrics.portfolio_value)}`, tone: pnl === null ? '' : pnl < 0 ? 'negative' : 'positive' },
+        { label: 'Ликвидный резерв', value: formatPercent(metrics.cash_ratio), note: laggard ? `Аутсайдер: ${laggard[0]} ${formatPercent(laggard[1].percent_change_24h, true)}` : `Кэш ${formatMoney(metrics.cash_reserve_usd)}`, tone: '' },
+      ];
+      cards.forEach((item) => {
+        const card = node('article', 'takeaway');
+        card.append(node('span', 'eyebrow', item.label), node('strong', `takeaway-value ${item.tone}`.trim(), item.value), node('span', 'takeaway-note', item.note));
+        host.append(card);
+      });
+    }
+
+    function renderReportCharts(report) {
+      destroyChart('reportMarketChart'); destroyChart('reportAllocationChart');
+      const marketCanvas = $('reportMarketChart'); const marketFallback = $('report-market-fallback');
+      const markets = report?.market_snapshot?.markets;
+      const marketEntries = markets && typeof markets === 'object'
+        ? Object.entries(markets).filter(([, item]) => isFiniteNumber(item?.percent_change_24h))
+        : [];
+      if (!window.Chart || !marketEntries.length) {
+        marketCanvas.hidden = true; marketFallback.hidden = false;
+        marketFallback.textContent = window.Chart ? 'В выбранном отчёте нет суточной динамики.' : 'Chart.js недоступен.';
+      } else {
+        const values = marketEntries.map(([, item]) => Number(item.percent_change_24h));
+        marketCanvas.hidden = false; marketFallback.hidden = true;
+        state.reportMarketChart = new Chart(marketCanvas, {
+          type: 'bar',
+          data: { labels: marketEntries.map(([symbol]) => symbol.replace('USDT', '')), datasets: [{ data: values, backgroundColor: values.map((value) => value >= 0 ? 'rgba(52,211,153,.72)' : 'rgba(251,113,133,.75)'), borderColor: values.map((value) => value >= 0 ? '#6ee7b7' : '#fda4af'), borderWidth: 1, borderRadius: 5, maxBarThickness: 26 }] },
+          options: { responsive: true, maintainAspectRatio: false, animation: matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 420 }, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(9,14,26,.97)', borderColor: 'rgba(148,163,184,.25)', borderWidth: 1, callbacks: { label: (context) => ` ${formatPercent(context.raw, true)}` } } }, scales: { x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { family: 'Share Tech Mono', size: 10 } } }, y: { grid: { color: 'rgba(148,163,184,.08)' }, ticks: { color: '#64748b', callback: (value) => `${value}%` } } } }
+        });
+      }
+
+      const mixCanvas = $('reportAllocationChart'); const mixFallback = $('report-allocation-fallback');
+      const allocations = (Array.isArray(report?.metrics?.allocations) ? report.metrics.allocations : []).filter((item) => isFiniteNumber(item?.value_usd) && Number(item.value_usd) >= 0);
+      if (!window.Chart || !allocations.length) {
+        mixCanvas.hidden = true; mixFallback.hidden = false;
+        mixFallback.textContent = window.Chart ? 'В выбранном отчёте нет структуры портфеля.' : 'Chart.js недоступен.';
+      } else {
+        mixCanvas.hidden = false; mixFallback.hidden = true;
+        state.reportAllocationChart = new Chart(mixCanvas, {
+          type: 'doughnut',
+          data: { labels: allocations.map((item) => item.symbol || item.label || 'Актив'), datasets: [{ data: allocations.map((item) => Number(item.value_usd)), backgroundColor: allocations.map((_, index) => palette[index % palette.length]), borderColor: '#07101d', borderWidth: 3, hoverOffset: 5 }] },
+          options: { responsive: true, maintainAspectRatio: false, cutout: '68%', animation: matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 420 }, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 8, boxHeight: 8, usePointStyle: true, padding: 12, font: { family: 'Share Tech Mono', size: 10 } } }, tooltip: { backgroundColor: 'rgba(9,14,26,.97)', borderColor: 'rgba(148,163,184,.25)', borderWidth: 1, callbacks: { label: (context) => ` ${context.label}: ${formatMoney(context.raw)}` } } } }
+        });
+      }
+    }
+
     function wrapReportTables() {
       $('report-content').querySelectorAll('table').forEach((table) => {
         if (table.parentElement?.classList.contains('report-table-scroll')) return;
@@ -457,17 +586,67 @@
         table.parentNode.insertBefore(wrapper, table); wrapper.append(table);
       });
     }
+
+    function emphasizeLeadingLabel(element) {
+      const labels = ['Оценка сценария прошлого отчёта:', 'Статус отслеживаемого портфеля:', 'Интерпретация фандинга:', 'Рыночный режим:', 'Сравнительный вывод:', 'Решение дня:', 'Стоимость отслеживаемого портфеля:', 'PnL:', 'Свободный денежный резерв:', 'Зарезервировано под лимитные заявки:', 'Доля ликвидного резерва:'];
+      const first = element.firstChild;
+      if (!first || first.nodeType !== Node.TEXT_NODE) return;
+      const label = labels.find((candidate) => first.textContent.trimStart().startsWith(candidate));
+      if (!label) return;
+      const raw = first.textContent; const start = raw.indexOf(label);
+      const strong = node('strong', 'report-label', label);
+      first.replaceWith(document.createTextNode(raw.slice(0, start)), strong, document.createTextNode(raw.slice(start + label.length)));
+    }
+
+    function structureReportContent() {
+      const host = $('report-content'); const elements = [...host.children]; const sections = []; let current = null;
+      elements.forEach((element) => {
+        if (element.tagName === 'H2') {
+          const match = element.textContent.trim().match(/^(\d+)\.\s*(.+)$/);
+          current = node('section', 'report-section');
+          const sectionNumber = match ? match[1] : String(sections.length + 1);
+          current.dataset.section = sectionNumber;
+          if (sectionNumber === '5') current.classList.add('scenarios');
+          if (sectionNumber === '6') current.classList.add('decisions');
+          current.id = `report-section-${sectionNumber}`;
+          element.className = 'report-section-heading';
+          element.replaceChildren(node('span', 'section-index', sectionNumber), node('span', 'section-title', match ? match[2] : element.textContent));
+          current.append(element); sections.push(current);
+        } else if (current) {
+          current.append(element);
+        }
+      });
+      if (sections.length) host.replaceChildren(...sections);
+
+      host.querySelectorAll('p, li').forEach((element) => {
+        const text = element.textContent.trim();
+        emphasizeLeadingLabel(element);
+        if (/^(Оценка сценария прошлого отчёта:|Статус отслеживаемого портфеля:|Рыночный режим:|Сравнительный вывод:|Решение дня:|Стоимость отслеживаемого портфеля:)/.test(text)) element.classList.add('report-callout');
+        if (/^(Данные о ликвидациях:|Открытый интерес:|Дополнительные макроданные:|Ончейн-данные:)/.test(text)) element.classList.add('report-callout', 'risk');
+        if (text.startsWith('Достигнут означает')) element.classList.add('method-note');
+      });
+
+      const toc = $('report-toc'); toc.replaceChildren(node('span', 'report-toc-label', 'Разделы'));
+      sections.forEach((section) => {
+        const heading = section.querySelector('.section-title');
+        const link = node('a', '', `${section.dataset.section}. ${heading?.textContent || 'Раздел'}`);
+        link.href = `#${section.id}`; toc.append(link);
+      });
+      wrapReportTables();
+    }
+
     function renderReportBody(report) {
       $('report-kicker').textContent = report?.day == null ? 'ОТЧЕТ AI-АГЕНТА' : `ОТЧЕТ AI-АГЕНТА · ДЕНЬ ${report.day} · ${formatDate(report.date)}`;
       $('report-title').textContent = report?.title || 'Отчет без названия';
       $('report-balance').textContent = formatMoney(report?.metrics?.portfolio_value);
       $('report-pnl').textContent = formatPercent(report?.metrics?.pnl_percent, true);
+      renderReportBrief(report); renderReportCharts(report);
       const host = $('report-content'); host.replaceChildren();
       if (!report?.content || typeof report.content !== 'string') { host.append(node('p', 'empty', 'Текст отчета недоступен.')); return; }
       try {
         const rendered = marked.parse(report.content, { async: false, gfm: true, breaks: false });
         host.innerHTML = DOMPurify.sanitize(rendered, { USE_PROFILES: { html: true }, FORBID_TAGS: ['style', 'iframe', 'object', 'embed', 'form'], FORBID_ATTR: ['style'] });
-        wrapReportTables();
+        structureReportContent();
       } catch (error) {
         host.append(node('p', 'empty', `Не удалось отобразить отчет: ${error.message}`));
       }
@@ -573,6 +752,8 @@
       const paused = document.hidden;
       if (state.performanceChart) { state.performanceChart.options.animation = false; paused ? state.performanceChart.stop() : state.performanceChart.resize(); }
       if (state.allocationChart) { state.allocationChart.options.animation = false; paused ? state.allocationChart.stop() : state.allocationChart.resize(); }
+      if (state.reportMarketChart) { state.reportMarketChart.options.animation = false; paused ? state.reportMarketChart.stop() : state.reportMarketChart.resize(); }
+      if (state.reportAllocationChart) { state.reportAllocationChart.options.animation = false; paused ? state.reportAllocationChart.stop() : state.reportAllocationChart.resize(); }
     });
     startScene(); loadReports();
   </script>

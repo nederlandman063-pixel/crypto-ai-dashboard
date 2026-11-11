@@ -77,6 +77,8 @@ class FrontendContractTests(unittest.TestCase):
             "archive-panel",
             "archive-empty",
             "report-panel",
+            "report-brief",
+            "report-visuals",
         ):
             self.assertIn(f'data-testid="{test_id}"', HTML)
 
@@ -85,6 +87,9 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("DOMPurify.sanitize", HTML)
         self.assertIn("FORBID_TAGS", HTML)
         self.assertIn("report-table-scroll", HTML)
+        self.assertIn("structureReportContent", HTML)
+        self.assertIn("report-section-heading", HTML)
+        self.assertIn("report-toc", HTML)
 
     def test_archive_and_charts_are_derived_from_loaded_reports(self):
         self.assertIn("state.reports = documentData.reports", HTML)
@@ -92,6 +97,11 @@ class FrontendContractTests(unittest.TestCase):
         self.assertIn("item.metrics.portfolio_value", HTML)
         self.assertIn("report?.metrics?.allocations", HTML)
         self.assertIn("report?.market_snapshot?.markets", HTML)
+        self.assertIn("renderReportBrief", HTML)
+        self.assertIn("renderReportCharts", HTML)
+        self.assertIn('id="reportMarketChart"', HTML)
+        self.assertIn('id="reportAllocationChart"', HTML)
+        self.assertIn("item.percent_change_24h", HTML)
         self.assertIn("archive-search", HTML)
         self.assertIn("filterArchive", HTML)
         self.assertNotIn("Пассивный HODL", HTML)

@@ -146,9 +146,9 @@ class PipelineTests(unittest.TestCase):
 
         self.assertIsNotNone(genai.Client)
         self.assertEqual(cron_pipeline.MODEL, "gemini-2.5-flash")
-        self.assertEqual(cron_pipeline.GEMINI_API_VERSION, "v1beta")
+        self.assertEqual(cron_pipeline.GEMINI_API_VERSION, "v1beta1")
 
-    def test_gemini_client_explicitly_uses_v1beta_for_system_instruction(self):
+    def test_gemini_client_uses_vertex_endpoint_and_system_instruction(self):
         response = MagicMock()
         response.text = self.conforming_report
         client = MagicMock()
@@ -158,8 +158,9 @@ class PipelineTests(unittest.TestCase):
             result = cron_pipeline.generate_with_gemini("prompt", "test-key")
 
         self.assertEqual(result, self.conforming_report)
+        self.assertIs(client_factory.call_args.kwargs["vertexai"], True)
         http_options = client_factory.call_args.kwargs["http_options"]
-        self.assertEqual(http_options.api_version, "v1beta")
+        self.assertEqual(http_options.api_version, "v1beta1")
         generation_config = client.models.generate_content.call_args.kwargs["config"]
         self.assertEqual(generation_config.system_instruction, cron_pipeline.SYSTEM_INSTRUCTION)
 
